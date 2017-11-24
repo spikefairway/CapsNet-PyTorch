@@ -33,6 +33,8 @@ class PrimaryCaps(nn.Module):
 	def __init__(self):
 		super(PrimaryCaps, self).__init__()
 
+		
+
 		def create_conv_unit(unit_idx):
 				unit = ConvUnit()
 				self.add_module("unit_" + str(unit_idx), unit)
