@@ -11,8 +11,9 @@ from torchvision import datasets, transforms
 import torchvision.utils as vutils
 import torch.nn.functional as F
 
-from capsule_conv_layer import CapsuleConvLayer
-from capsule_layer import CapsuleLayer
+from conv_layer import Conv1
+from primary_caps import PrimaryCaps
+from digit_caps import DigitCaps
 
 
 class CapsuleNetwork(nn.Module):
@@ -34,20 +35,11 @@ class CapsuleNetwork(nn.Module):
         self.image_width = image_width
         self.image_height = image_height
 
-        self.conv1 = CapsuleConvLayer(in_channels=conv_inputs,
-                                      out_channels=conv_outputs)
+        self.conv1 = Conv1()
 
-        self.primary = CapsuleLayer(in_units=0,
-                                    in_channels=conv_outputs,
-                                    num_units=num_primary_units,
-                                    unit_size=primary_unit_size,
-                                    use_routing=False)
+        self.primary = PrimaryCaps()
 
-        self.digits = CapsuleLayer(in_units=num_primary_units,
-                                   in_channels=primary_unit_size,
-                                   num_units=num_output_units,
-                                   unit_size=output_unit_size,
-                                   use_routing=True)
+        self.digits = DigitCaps()
 
         reconstruction_size = image_width * image_height * image_channels
         self.reconstruct0 = nn.Linear(num_output_units*output_unit_size, int((reconstruction_size * 2) / 3))
