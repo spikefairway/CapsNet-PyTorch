@@ -34,37 +34,23 @@ dataset_transform = transforms.Compose([
 					   transforms.Normalize((0.1307,), (0.3081,))
 				   ])
 
-train_dataset = datasets.MNIST('../data', train=True, download=True, transform=dataset_transform)
+train_dataset = datasets.MNIST('data', train=True, download=True, transform=dataset_transform)
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-test_dataset = datasets.MNIST('../data', train=False, download=True, transform=dataset_transform)
+test_dataset = datasets.MNIST('data', train=False, download=True, transform=dataset_transform)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
 
 #
 # Create capsule network.
 #
 
-conv_inputs = 1
-conv_outputs = 256
-num_primary_units = 8
-primary_unit_size = 32 * 6 * 6  # fixme get from conv2d
-output_unit_size = 16
-
-network = CapsuleNetwork(image_width=28,
-						 image_height=28,
-						 image_channels=1,
-						 conv_inputs=conv_inputs,
-						 conv_outputs=conv_outputs,
-						 num_primary_units=num_primary_units,
-						 primary_unit_size=primary_unit_size,
-						 num_output_units=10, # one for each MNIST digit
-						 output_unit_size=output_unit_size).cuda()
+network = CapsuleNetwork().cuda()
 
 print(network)
 
 
 # Converts batches of class indices to classes of one-hot vectors.
-def to_one_hot(x, length):
+def to_one_hot(x, length=10):
 	batch_size = x.size(0)
 	x_one_hot = torch.zeros(batch_size, length)
 	for i in range(batch_size):
@@ -79,7 +65,7 @@ def test():
 	correct = 0
 	for data, target in test_loader:
 		target_indices = target
-		target_one_hot = to_one_hot(target_indices, length=10)
+		target_one_hot = to_one_hot(target_indices)
 
 		data, target = Variable(data, volatile=True).cuda(), Variable(target_one_hot).cuda()
 
@@ -110,7 +96,7 @@ def train(epoch):
 	log_interval = 1
 	network.train()
 	for batch_idx, (data, target) in enumerate(train_loader):
-		target_one_hot = to_one_hot(target, length=10)
+		target_one_hot = to_one_hot(target)
 
 		data, target = Variable(data).cuda(), Variable(target_one_hot).cuda()
 

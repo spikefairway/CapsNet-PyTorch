@@ -14,11 +14,11 @@ from utils import squash
 
 
 class ConvUnit(nn.Module):
-	def __init__(self, out_channels):
+	def __init__(self, in_channels, out_channels):
 		super(ConvUnit, self).__init__()
 
-		self.conv0 = nn.Conv2d(
-			in_channels=256,
+		self.conv = nn.Conv2d(
+			in_channels=in_channels,
 			out_channels=out_channels,
 			kernel_size=9,
 			stride=2,
@@ -26,10 +26,10 @@ class ConvUnit(nn.Module):
 		)
 
 	def forward(self, x):
-		# x: [batch_size, 256, 20, 20]
+		# x: [batch_size, in_channels=256, 20, 20]
 
-		h = self.conv0(x)
-		# h: [batch_size, out_channels, 6, 6]
+		h = self.conv(x)
+		# h: [batch_size, out_channels=8, 6, 6]
 
 		return h
 
@@ -38,11 +38,15 @@ class PrimaryCaps(nn.Module):
 	def __init__(self):
 		super(PrimaryCaps, self).__init__()
 
+		self.conv1_out = 256 # out_channels of Conv1, a ConvLayer just before PrimaryCaps
 		self.capsule_units = 32
 		self.capsule_size = 8
 
 		def create_conv_unit(unit_idx):
-				unit = ConvUnit(self.capsule_units)
+				unit = ConvUnit(
+					in_channels=self.conv1_out, 
+					out_channels=self.capsule_size
+				)
 				self.add_module("unit_" + str(unit_idx), unit)
 				return unit
 

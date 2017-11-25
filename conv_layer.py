@@ -13,13 +13,9 @@ import torch.nn.functional as F
 
 class Conv1(nn.Module):
 	def __init__(self):
-		'''
-		`Conv1` is a ordinary 2D convolutional layer with 9x9 kernels, 
-		stride 2, 256 output channels, and ReLU activations.
-		'''
 		super(Conv1, self).__init__()
 
-		self.conv0 = nn.Conv2d(
+		self.conv = nn.Conv2d(
 			in_channels=1,
 			out_channels=256,
 			kernel_size=9,
@@ -30,4 +26,9 @@ class Conv1(nn.Module):
 		self.relu = nn.ReLU(inplace=True)
 
 	def forward(self, x):
-		return self.relu(self.conv0(x))
+		# x: [batch_size, 1, 28, 28]
+
+		h = self.relu(self.conv(x))
+		# h: [batch_size, 256, 20, 20]
+		
+		return h

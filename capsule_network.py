@@ -17,35 +17,35 @@ from digit_caps import DigitCaps
 
 
 class CapsuleNetwork(nn.Module):
-	def __init__(self,
-				 image_width,
-				 image_height,
-				 image_channels,
-				 conv_inputs,
-				 conv_outputs,
-				 num_primary_units,
-				 primary_unit_size,
-				 num_output_units,
-				 output_unit_size):
+	def __init__(self):
+
 		super(CapsuleNetwork, self).__init__()
+
+		self.image_channels = 1
+		self.image_width = 28
+		self.image_height = 28
+
+		self.out_capsules=10
+		self.out_capsule_size=16
 
 		self.reconstructed_image_count = 0
 
-		self.image_channels = image_channels
-		self.image_width = image_width
-		self.image_height = image_height
+		# Build modules for CapsNet.
 
+		## Convolution layer
 		self.conv1 = Conv1()
 
+		## PrimaryCaps layer
 		self.primary = PrimaryCaps()
 
+		## DigitCaps layer
 		self.digits = DigitCaps()
 
-		reconstruction_size = image_width * image_height * image_channels
-		self.reconstruct0 = nn.Linear(num_output_units*output_unit_size, int((reconstruction_size * 2) / 3))
+		## Decoder
+		reconstruction_size = self.image_width * self.image_height * self.image_channels
+		self.reconstruct0 = nn.Linear(self.out_capsules*self.out_capsule_size, int((reconstruction_size * 2) / 3))
 		self.reconstruct1 = nn.Linear(int((reconstruction_size * 2) / 3), int((reconstruction_size * 3) / 2))
 		self.reconstruct2 = nn.Linear(int((reconstruction_size * 3) / 2), reconstruction_size)
-
 		self.relu = nn.ReLU(inplace=True)
 		self.sigmoid = nn.Sigmoid()
 
