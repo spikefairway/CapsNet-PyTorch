@@ -48,7 +48,7 @@ class DigitCaps(nn.Module):
 		# u_hat: [batch_size, in_capsules=1152, out_capsules=10, out_capsule_size=16, 1]
 
 		# Initialize routing logits to zero.
-		b_ij = Variable(torch.zeros(self.in_capsules, out_capsules, 1)).cuda()
+		b_ij = Variable(torch.zeros(self.in_capsules, self.out_capsules, 1)).cuda()
 		# b_ij: [in_capsules=1152, out_capsules=10, 1]
 
 		# Iterative routing.
