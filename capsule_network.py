@@ -90,7 +90,9 @@ class CapsuleNetwork(nn.Module):
 		# L_c: [batch_size]
 
 		if size_average:
-			L_c = L_c.mean()
+			L_c = L_c.mean() # average over batch.
+		else:
+			L_c = L_c.sum() # sum over batch.
 
 		return L_c
 
@@ -115,9 +117,10 @@ class CapsuleNetwork(nn.Module):
 		factor = 0.0005
 		error *= factor
 
-		# Average over batch
 		if size_average:
-			error = error.mean()
+			error = error.mean() # average over batch.
+		else:
+			error = error.sum() # sum over batch.
 
 		return error
 
