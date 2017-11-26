@@ -25,7 +25,7 @@ class CapsuleNetwork(nn.Module):
 		self.reconstructed_image_count = 0
 
 		# Build modules for CapsNet.
-		
+
 		## Convolution layer
 		self.conv1 = Conv1()
 
@@ -83,7 +83,7 @@ class CapsuleNetwork(nn.Module):
 		max_r = torch.max(v_mag - m_minus, zero).view(batch_size, -1)**2
 		# max_l, max_r: [batch_size, 10]
 
-		# This is Eq. 4 from the paper.
+		# This is Eq.4 from the paper.
 		loss_lambda = 0.5
 		T_c = target
 		# T_c: [batch_size, 10]
@@ -126,8 +126,7 @@ class CapsuleNetwork(nn.Module):
 
 		return error
 
-	def reconstruct(self, images, input, save_path=None):
-		# images: [batch_size, 1, 28, 28]
+	def reconstruct(self, input, save_path=None):
 		# input: [batch_size, 10, 16]
 
 		# Get the lengths of capsule outputs.
