@@ -101,6 +101,8 @@ class CapsuleNetwork(nn.Module):
 		# images: [batch_size, 1, 28, 28]
 		# input: [batch_size, 10, 16]
 
+		batch_size = images.size(0)
+
 		# Save reconstructed images occasionally.
 		if self.reconstructed_image_count % 10 == 0:
 			save_path = "reconstruction.png"
@@ -109,12 +111,12 @@ class CapsuleNetwork(nn.Module):
 		self.reconstructed_image_count += 1
 
 		# Reconstruct input image.
-		output = self.reconstruct(images, input, save_path=save_path)
-		# output: [batch_size, 1, 28, 28]
+		reconstructed = self.reconstruct(images, input, save_path=save_path)
+		# reconstructed: [batch_size, 1, 28, 28]
 
 		# The reconstruction loss is the sum squared difference between the input image and reconstructed image.
 		# Multiplied by a small number so it doesn't dominate the margin (class) loss.
-		error = (output - images).view(output.size(0), -1)
+		error = (reconstructed - images).view(batch_size, -1)
 		error = error**2
 		# error: [batch_size, 784=1*28*28]
 		error = torch.sum(error, dim=1) * 0.0005
