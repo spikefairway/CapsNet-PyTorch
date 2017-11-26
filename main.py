@@ -154,7 +154,7 @@ def train(epoch):
 # Function for testing.
 def test(epoch):
 	model.eval()
-	test_loss, test_margin_loss, test_rec_loss = 0
+	test_loss, test_margin_loss, test_rec_loss = 0, 0, 0
 	correct = 0
 
 	for data, target in test_loader:
