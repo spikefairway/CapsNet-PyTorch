@@ -16,9 +16,7 @@ import torch.nn.functional as F
 from capsule_network import CapsuleNetwork
 
 
-#
-# Training parameter Settings.
-#
+# Get training parameter settings.
 
 parser = argparse.ArgumentParser(description='CapsNet for MNIST')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
@@ -37,22 +35,18 @@ parser.add_argument('--log-interval', type=int, default=1, metavar='N',
 args = parser.parse_args()
 
 
-#
-# Load MNIST dataset.
-#
-
-## Initialize the random seed
+# Initialize the random seed
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed(args.seed)
 
-## Normalization for MNIST dataset.
+
+# Setup data loaders for train/test sets
+kwargs = {'num_workers': 1, 'pin_memory': True}
+
 transform = transforms.Compose([
 	transforms.ToTensor(),
 	transforms.Normalize((0.1307,), (0.3081,))
 ])
-
-## Setup data loaders for train/test sets
-kwargs = {'num_workers': 1, 'pin_memory': True}
 
 train_loader = torch.utils.data.DataLoader(
     datasets.MNIST(
@@ -84,13 +78,9 @@ model = CapsuleNetwork().cuda()
 print(model)
 
 
-# Setup optimizer
+# Setup optimizer.
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-
-#
-# Some utility functions for training and testing.
-#
 
 # Function to convert batches of class indices to classes of one-hot vectors.
 def to_one_hot(x, length=10):
@@ -100,7 +90,8 @@ def to_one_hot(x, length=10):
 		x_one_hot[i, x[i]] = 1.0
 	return x_one_hot
 
-# Training
+
+# Function for training.
 def train(epoch):
 	model.train()
 
@@ -120,7 +111,8 @@ def train(epoch):
 				100. * batch_idx / len(train_loader), loss.data[0] )
 			)
 
-# Testing
+
+# Function for testing.
 def test():
 	model.eval()
 	test_loss = 0
@@ -147,10 +139,7 @@ def test():
 	)
 
 
-#
 # Start training.
-#
-
 for epoch in range(1, args.epochs + 1):
 	train(epoch)
 	test()
