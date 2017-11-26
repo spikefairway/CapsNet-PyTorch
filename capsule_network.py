@@ -57,9 +57,11 @@ class CapsuleNetwork(nn.Module):
 		margin_loss = self.margin_loss(input, target, size_average)
 		reconstruction_loss = self.reconstruction_loss(images, input, size_average)
 
-		loss = margin_loss + reconstruction_loss
+		factor = 0.0005
 
-		return loss
+		loss = margin_loss + factor * reconstruction_loss
+
+		return loss, margin_loss, reconstruction_loss
 
 	def margin_loss(self, input, target, size_average=True):
 		# images: [batch_size, 1, 28, 28]
@@ -109,7 +111,7 @@ class CapsuleNetwork(nn.Module):
 		error = (reconstructed - images).view(batch_size, -1)
 		error = error**2
 		# error: [batch_size, 784=1*28*28]
-		error = torch.sum(error, dim=1) * 0.0005
+		error = torch.sum(error, dim=1)
 		# error: [batch_size]
 
 		# Average over batch

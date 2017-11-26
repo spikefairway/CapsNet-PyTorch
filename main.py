@@ -131,7 +131,7 @@ def train(epoch):
 
 		optimizer.zero_grad()
 		output = model(data) # forward
-		loss = model.loss(data, output, target)
+		loss, margin_loss, reconstruction_loss = model.loss(data, output, target)
 		loss.backward()
 		optimizer.step()
 
@@ -147,12 +147,14 @@ def train(epoch):
 			# Log train/loss to TensorBoard at every iteration
 			n_iter = (epoch - 1) * len(train_loader) + batch_idx + 1
 			writer.add_scalar('train/loss', loss.data[0], n_iter)
+			writer.add_scalar('train/margin_loss', margin_loss.data[0], n_iter)
+			writer.add_scalar('train/reconstruction_loss', reconstruction_loss.data[0], n_iter)
 
 
 # Function for testing.
 def test(epoch):
 	model.eval()
-	test_loss = 0
+	test_loss, test_margin_loss, test_rec_loss = 0
 	correct = 0
 
 	for data, target in test_loader:
@@ -163,13 +165,22 @@ def test(epoch):
 		output = model(data)
 
 		# Sum up batch loss by `size_average=False`, later being averaged over all test samples.
-		test_loss += model.loss(data, output, target, size_average=False).data[0]
+		loss, margin_loss, reconstruction_loss = model.loss(data, output, target, size_average=False)
+		loss, margin_loss, reconstruction_loss = loss.data[0], margin_loss.data[0], reconstruction_loss.data[0]
+
+		test_loss += loss
+		test_margin_loss += margin_loss
+		test_rec_loss += reconstruction_loss
 		
 		v_mag = torch.sqrt((output**2).sum(dim=2, keepdim=True))
 		pred = v_mag.data.max(1, keepdim=True)[1].cpu()
 		correct += pred.eq(target_indices.view_as(pred)).sum()
 
-	test_loss /= len(test_loader.dataset) # Average over all test samples.
+	# Average over all test samples.
+	test_loss /= len(test_loader.dataset)
+	test_margin_loss /= len(test_loader.dataset)
+	test_rec_loss /= len(test_loader.dataset)
+
 	test_accuracy = 100. * correct / len(test_loader.dataset)
 	print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
 		test_loss, correct, len(test_loader.dataset), test_accuracy )
@@ -178,12 +189,9 @@ def test(epoch):
 	# Log test/loss and test/accuracy to TensorBoard at every epoch
 	n_iter = epoch * len(train_loader)
 	writer.add_scalar('test/loss', test_loss, n_iter)
+	writer.add_scalar('test/margin_loss', test_margin_loss, n_iter)
+	writer.add_scalar('test/reconstruction_loss', test_rec_loss, n_iter)
 	writer.add_scalar('test/accuracy', test_accuracy, n_iter)
-
-
-# Visualize network as a graph on TensorBoard
-#res = model(torch.autograd.Variable(torch.Tensor(1, 1, 28, 28).cuda(), requires_grad=True))
-#writer.add_graph(model, lastVar=res)
 
 
 # Start training.
