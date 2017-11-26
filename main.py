@@ -100,7 +100,7 @@ optimizer = optim.Adam(model.parameters(), lr=args.lr)
 # Get some random test images for reconstruction testing
 test_iter = iter(test_loader)
 reconstruction_samples, _ = test_iter.next()
-writer.add_image('original', vutils.make_grid(reconstruction_samples, range=(0, 1)))
+writer.add_image('original', vutils.make_grid(reconstruction_samples, normalize=True))
 reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda()
 
 
@@ -145,8 +145,8 @@ def train(epoch):
 		)
 
 		reconstructed = reconstruct_test_images()
-		vutils.save_image(reconstructed, args.rec_path)
-
+		vutils.save_image(reconstructed, args.rec_path, normalize=True)
+		
 		if batch_idx % args.tb_log_interval == 0:
 			# Log train/loss to TensorBoard at every iteration
 			n_iter = (epoch - 1) * len(train_loader) + batch_idx + 1
@@ -154,7 +154,10 @@ def train(epoch):
 			writer.add_scalar('train/margin_loss', margin_loss.data[0], n_iter)
 			writer.add_scalar('train/reconstruction_loss', reconstruction_loss.data[0], n_iter)
 
-			writer.add_image('reconstructed/iter_{}'.format(n_iter), vutils.make_grid(reconstructed))
+			writer.add_image(
+				'reconstructed/iter_{}'.format(n_iter), 
+				vutils.make_grid(reconstructed, normalize=True)
+			)
 
 
 # Function for testing.
