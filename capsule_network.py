@@ -19,10 +19,7 @@ from decoder import Decoder
 
 class CapsuleNetwork(nn.Module):
 	def __init__(self):
-
 		super(CapsuleNetwork, self).__init__()
-
-		self.reconstructed_image_count = 0
 
 		# Build modules for CapsNet.
 
@@ -30,10 +27,10 @@ class CapsuleNetwork(nn.Module):
 		self.conv1 = Conv1()
 
 		## PrimaryCaps layer
-		self.primary = PrimaryCaps()
+		self.primary_caps = PrimaryCaps()
 
 		## DigitCaps layer
-		self.digits = DigitCaps()
+		self.digit_caps = DigitCaps()
 
 		## Decoder
 		self.decoder = Decoder()
@@ -44,10 +41,10 @@ class CapsuleNetwork(nn.Module):
 		h = self.conv1(x)
 		# h: [batch_size, 256, 20, 20]
 
-		h = self.primary(h)
+		h = self.primary_caps(h)
 		# h: [batch_size, 1152=primary_capsules, 8=primary_capsule_size]
 
-		h = self.digits(h)
+		h = self.digit_caps(h)
 		# h: [batch_size, 10=digit_capsule, 16=digit_capsule_size]
 
 		return h
@@ -103,15 +100,8 @@ class CapsuleNetwork(nn.Module):
 
 		batch_size = images.size(0)
 
-		# Save reconstructed images occasionally.
-		if self.reconstructed_image_count % 10 == 0:
-			save_path = "reconstruction.png"
-		else:
-			save_path = None
-		self.reconstructed_image_count += 1
-
 		# Reconstruct input image.
-		reconstructed = self.reconstruct(input, save_path=save_path)
+		reconstructed = self.reconstruct(input)
 		# reconstructed: [batch_size, 1, 28, 28]
 
 		# The reconstruction loss is the sum squared difference between the input image and reconstructed image.

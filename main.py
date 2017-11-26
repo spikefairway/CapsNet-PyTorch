@@ -29,8 +29,8 @@ parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                     help='learning rate (default: 0.01)')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
-parser.add_argument('--log-interval', type=int, default=1, metavar='N',
-                    help='how many batches to wait before logging training status (default: 1)')
+parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+                    help='how many batches to wait before logging training status (default: 10)')
 
 args = parser.parse_args()
 
@@ -82,6 +82,19 @@ print(model)
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
 
+# Get test samples for reconstruction
+reconstruction_samples, _ = test_loader[0]
+reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda()
+
+
+# Function to reconstruct the test samples
+def reconstruct_test_samples():
+	model.eval()
+
+	output = model(reconstruction_samples)
+	model.reconstruct(output, save_path="reconstruction_test.png")
+
+
 # Function to convert batches of class indices to classes of one-hot vectors.
 def to_one_hot(x, length=10):
 	batch_size = x.size(0)
@@ -111,6 +124,8 @@ def train(epoch):
 				100. * batch_idx / len(train_loader), loss.data[0] )
 			)
 
+			reconstruct_test_samples()
+
 
 # Function for testing.
 def test():
@@ -132,7 +147,7 @@ def test():
 		pred = v_mag.data.max(1, keepdim=True)[1].cpu()
 		correct += pred.eq(target_indices.view_as(pred)).sum()
 
-	test_loss /= len(test_loader.dataset)
+	test_loss /= len(test_loader.dataset) # Average over all test samples.
 	test_accuracy = 100. * correct / len(test_loader.dataset)
 	print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
 		test_loss, correct, len(test_loader.dataset), test_accuracy )
