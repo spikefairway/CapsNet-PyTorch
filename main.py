@@ -33,7 +33,9 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 parser.add_argument('--rec-path', default='reconstruction.png', metavar='R',
 					help='path to save reconstructed test images (default: reconstruction.png)')
 parser.add_argument('--tb-log-interval', type=int, default=10, metavar='N',
-					help='how many batches to wait before saving TensorBoard event file (default: 10)')
+					help='how many batches to wait before saving training status to TensorBoard (default: 10)')
+parser.add_argument('--tb-image-interval', type=int, default=100, metavar='N',
+					help='how many batches to wait before saving reconstructed images to TensorBoard (default: 100)')
 parser.add_argument('--tb-log-dir', default=None, metavar='LD',
 					help='directory to output TensorBoard event file (default: runs/<DATETIME>)')
 
@@ -148,12 +150,14 @@ def train(epoch):
 		vutils.save_image(reconstructed, args.rec_path, normalize=True)
 		
 		if batch_idx % args.tb_log_interval == 0:
-			# Log train/loss to TensorBoard at every iteration
+			# Log train/loss to TensorBoard
 			n_iter = (epoch - 1) * len(train_loader) + batch_idx + 1
 			writer.add_scalar('train/loss', loss.data[0], n_iter)
 			writer.add_scalar('train/margin_loss', margin_loss.data[0], n_iter)
 			writer.add_scalar('train/reconstruction_loss', reconstruction_loss.data[0], n_iter)
 
+		if batch_idx % args.tb_image_interval == 0:
+			# Log reconstructed test images to TensorBoard
 			writer.add_image(
 				'reconstructed/iter_{}'.format(n_iter), 
 				vutils.make_grid(reconstructed, normalize=True)
