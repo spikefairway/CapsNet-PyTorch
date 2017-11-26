@@ -11,6 +11,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from torchvision import datasets, transforms
+import torchvision.utils as vutils
 import torch.nn.functional as F
 
 from capsule_network import CapsuleNetwork
@@ -31,8 +32,6 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 					help='random seed (default: 1)')
 parser.add_argument('--rec-path', default='reconstruction.png', metavar='R',
 					help='path to save reconstructed test images (default: reconstruction.png)')
-parser.add_argument('--log-interval', type=int, default=1, metavar='N',
-					help='how many batches to wait before logging training status (default: 1)')
 parser.add_argument('--tb-log-interval', type=int, default=1, metavar='N',
 					help='how many batches to wait before saving TensorBoard event file (default: 10)')
 parser.add_argument('--tb-log-dir', default=None, metavar='LD',
@@ -101,6 +100,7 @@ optimizer = optim.Adam(model.parameters(), lr=args.lr)
 # Get some random test images for reconstruction testing
 test_iter = iter(test_loader)
 reconstruction_samples, _ = test_iter.next()
+writer.add_image('original', vutils.make_grid(reconstruction_samples))
 reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda()
 
 
@@ -109,7 +109,11 @@ def reconstruct_test_images():
 	model.eval()
 
 	output = model(reconstruction_samples)
-	model.reconstruct(output, save_path=args.rec_path)
+
+	reconstructed = model.reconstruct(output)
+	reconstructed = reconstructed.data.cpu()
+
+	return reconstructed
 
 
 # Function to convert batches of class indices to classes of one-hot vectors.
@@ -135,13 +139,13 @@ def train(epoch):
 		loss.backward()
 		optimizer.step()
 
-		if batch_idx % args.log_interval == 0:
-			print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-				epoch, batch_idx * len(data), len(train_loader.dataset),
-				100. * batch_idx / len(train_loader), loss.data[0] )
-			)
+		print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+			epoch, batch_idx * len(data), len(train_loader.dataset),
+			100. * batch_idx / len(train_loader), loss.data[0] )
+		)
 
-			reconstruct_test_images()
+		reconstructed = reconstruct_test_images()
+		vutils.save_image(reconstructed, args.rec_path)
 
 		if batch_idx % args.tb_log_interval == 0:
 			# Log train/loss to TensorBoard at every iteration
@@ -149,6 +153,8 @@ def train(epoch):
 			writer.add_scalar('train/loss', loss.data[0], n_iter)
 			writer.add_scalar('train/margin_loss', margin_loss.data[0], n_iter)
 			writer.add_scalar('train/reconstruction_loss', reconstruction_loss.data[0], n_iter)
+
+			writer.add_image('reconstructed/iter_{}'.format(n_iter), vutils.make_grid(reconstructed))
 
 
 # Function for testing.

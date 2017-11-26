@@ -124,7 +124,7 @@ class CapsuleNetwork(nn.Module):
 
 		return error
 
-	def reconstruct(self, input, save_path=None):
+	def reconstruct(self, input):
 		# input: [batch_size, 10, 16]
 
 		# Get the lengths of capsule outputs.
@@ -162,10 +162,5 @@ class CapsuleNetwork(nn.Module):
 		# Reconstruct input image.
 		reconstructed = self.decoder(masked)
 		# reconstructed: [batch_size, 1, 28, 28]
-
-		if save_path is not None:
-			output_image = reconstructed.data.cpu()
-			# output_image: [batch_size, 1, 28, 28]
-			vutils.save_image(output_image, save_path)
 
 		return reconstructed
