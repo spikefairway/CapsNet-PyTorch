@@ -10,7 +10,7 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 
-from utils import squash
+from squash import squash
 
 
 class DigitCaps(nn.Module):
@@ -73,4 +73,4 @@ class DigitCaps(nn.Module):
 			# Update b_ij (routing).
 			b_ij = b_ij + u_vj1
 
-		return v_j.squeeze(1) # [batch_size, out_capsules=10, out_capsule_size=16, 1]
+		return v_j.squeeze(4).squeeze(1) # [batch_size, out_capsules=10, out_capsule_size=16]
