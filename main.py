@@ -32,7 +32,7 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 					help='random seed (default: 1)')
 parser.add_argument('--rec-path', default='reconstruction.png', metavar='R',
 					help='path to save reconstructed test images (default: reconstruction.png)')
-parser.add_argument('--tb-log-interval', type=int, default=1, metavar='N',
+parser.add_argument('--tb-log-interval', type=int, default=10, metavar='N',
 					help='how many batches to wait before saving TensorBoard event file (default: 10)')
 parser.add_argument('--tb-log-dir', default=None, metavar='LD',
 					help='directory to output TensorBoard event file (default: runs/<DATETIME>)')
@@ -100,7 +100,7 @@ optimizer = optim.Adam(model.parameters(), lr=args.lr)
 # Get some random test images for reconstruction testing
 test_iter = iter(test_loader)
 reconstruction_samples, _ = test_iter.next()
-writer.add_image('original', vutils.make_grid(reconstruction_samples))
+writer.add_image('original', vutils.make_grid(reconstruction_samples, range=(0, 1)))
 reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda()
 
 
