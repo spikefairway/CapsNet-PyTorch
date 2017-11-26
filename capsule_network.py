@@ -44,10 +44,10 @@ class CapsuleNetwork(nn.Module):
 		h = self.conv1(x)
 		# h: [batch_size, 256, 20, 20]
 
-		h = self.primary(x)
+		h = self.primary(h)
 		# h: [batch_size, 1152=primary_capsules, 8=primary_capsule_size]
 
-		h = self.digits(x)
+		h = self.digits(h)
 		# h: [batch_size, 10=digit_capsule, 16=digit_capsule_size]
 
 		return h

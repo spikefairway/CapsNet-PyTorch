@@ -33,10 +33,10 @@ class Decoder(nn.Module):
 	def forward(self, x):
 		# x: [batch_size, 160]
 
-		h = self.relu(self.linear0(h))
+		h = self.relu(self.linear0(x))
 		h = self.relu(self.linear1(h))
 		h = self.sigmoid(self.linear2(h))
-		h = output.view(-1, self.out_image_channels, self.out_image_height, self.out_image_width)
-		# output: [batch_size, 1, 28, 28]
+		h = h.view(-1, self.out_image_channels, self.out_image_height, self.out_image_width)
+		# h: [batch_size, 1, 28, 28]
 		
 		return h
