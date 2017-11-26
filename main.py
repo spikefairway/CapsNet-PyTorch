@@ -129,4 +129,5 @@ for epoch in range(1, num_epochs + 1):
 	last_loss = train(epoch)
 	test()
 	if last_loss < early_stop_loss:
+		print('\nEarly stopping.')
 		break
