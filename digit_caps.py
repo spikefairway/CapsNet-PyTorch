@@ -32,7 +32,7 @@ class DigitCaps(nn.Module):
 		)
 		# W: [in_capsules, out_capsules, out_capsule_size, in_capsule_size] = [1152, 10, 16, 8]
 
-	# FIXME, write in an easier way to understand, some tensors have some extra dimensions.
+	# FIXME, write in an easier way to understand, some tensors have some redundant dimensions.
 	def forward(self, x):
 		# x: [batch_size, in_capsules=1152, in_capsule_size=8]
 		batch_size = x.size(0)
