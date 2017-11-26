@@ -182,8 +182,8 @@ def test(epoch):
 
 
 # Visualize network as a graph on TensorBoard
-res = model(torch.autograd.Variable(torch.Tensor(1, 1, 28, 28), requires_grad=True))
-writer.add_graph(model, lastVar=res)
+#res = model(torch.autograd.Variable(torch.Tensor(1, 1, 28, 28).cuda(), requires_grad=True))
+#writer.add_graph(model, lastVar=res)
 
 
 # Start training.
