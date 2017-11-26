@@ -29,8 +29,8 @@ parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                     help='learning rate (default: 0.01)')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
-parser.add_argument('--log-interval', type=int, default=10, metavar='N',
-                    help='how many batches to wait before logging training status (default: 10)')
+parser.add_argument('--log-interval', type=int, default=1, metavar='N',
+                    help='how many batches to wait before logging training status (default: 1)')
 
 args = parser.parse_args()
 
@@ -82,17 +82,21 @@ print(model)
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
 
-# Get test samples for reconstruction
-reconstruction_samples, _ = test_loader[0]
+# Get some random test images for reconstruction testing
+#for idx, (data, _) in enumerate(test_loader):
+#	reconstruction_samples = Variable(data, volatile=True).cuda()
+#	break
+test_iter = iter(test_loader)
+reconstruction_samples, _ = test_iter.next()
 reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda()
 
 
-# Function to reconstruct the test samples
-def reconstruct_test_samples():
+# Function to reconstruct the test images
+def reconstruct_test_images():
 	model.eval()
 
 	output = model(reconstruction_samples)
-	model.reconstruct(output, save_path="reconstruction_test.png")
+	model.reconstruct(output, save_path="reconstruction.png")
 
 
 # Function to convert batches of class indices to classes of one-hot vectors.
@@ -124,7 +128,7 @@ def train(epoch):
 				100. * batch_idx / len(train_loader), loss.data[0] )
 			)
 
-			reconstruct_test_samples()
+			reconstruct_test_images()
 
 
 # Function for testing.
