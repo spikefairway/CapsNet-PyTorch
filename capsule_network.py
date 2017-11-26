@@ -111,7 +111,7 @@ class CapsuleNetwork(nn.Module):
 		self.reconstructed_image_count += 1
 
 		# Reconstruct input image.
-		reconstructed = self.reconstruct(images, input, save_path=save_path)
+		reconstructed = self.reconstruct(input, save_path=save_path)
 		# reconstructed: [batch_size, 1, 28, 28]
 
 		# The reconstruction loss is the sum squared difference between the input image and reconstructed image.
