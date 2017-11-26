@@ -3,6 +3,9 @@
 # https://arxiv.org/pdf/1710.09829.pdf
 #
 
+from __future__ import print_function
+import argparse
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,44 +15,84 @@ import torch.nn.functional as F
 
 from capsule_network import CapsuleNetwork
 
+
 #
-# Settings.
+# Training parameter Settings.
 #
 
-learning_rate = 0.01
+parser = argparse.ArgumentParser(description='CapsNet for MNIST')
+parser.add_argument('--batch-size', type=int, default=128, metavar='N',
+                    help='input batch size for training (default: 128)')
+parser.add_argument('--test-batch-size', type=int, default=128, metavar='N',
+                    help='input batch size for testing (default: 128)')
+parser.add_argument('--epochs', type=int, default=10, metavar='N',
+                    help='number of epochs to train (default: 10)')
+parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
+                    help='learning rate (default: 0.01)')
+parser.add_argument('--seed', type=int, default=1, metavar='S',
+                    help='random seed (default: 1)')
+parser.add_argument('--log-interval', type=int, default=1, metavar='N',
+                    help='how many batches to wait before logging training status (default: 1)')
 
-batch_size = 128
-test_batch_size = 128
+args = parser.parse_args()
 
-# Stop training if loss goes below this threshold.
-early_stop_loss = 0.0001
 
 #
 # Load MNIST dataset.
 #
 
-# Normalization for MNIST dataset.
-dataset_transform = transforms.Compose([
-					   transforms.ToTensor(),
-					   transforms.Normalize((0.1307,), (0.3081,))
-				   ])
+## Initialize the random seed
+torch.manual_seed(args.seed)
+torch.cuda.manual_seed(args.seed)
 
-train_dataset = datasets.MNIST('data', train=True, download=True, transform=dataset_transform)
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+## Normalization for MNIST dataset.
+transform = transforms.Compose([
+	transforms.ToTensor(),
+	transforms.Normalize((0.1307,), (0.3081,))
+])
 
-test_dataset = datasets.MNIST('data', train=False, download=True, transform=dataset_transform)
-test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=test_batch_size, shuffle=True)
+## Setup data loaders for train/test sets
+kwargs = {'num_workers': 1, 'pin_memory': True}
+
+train_loader = torch.utils.data.DataLoader(
+    datasets.MNIST(
+        'data', 
+        train=True, 
+        download=True,
+        transform=transform
+    ),
+    batch_size=args.batch_size, 
+    shuffle=True, 
+    **kwargs
+)
+
+test_loader = torch.utils.data.DataLoader(
+    datasets.MNIST(
+        'data', 
+        train=False, 
+        download=True,
+        transform=transform
+    ),
+    batch_size=args.test_batch_size, 
+    shuffle=True, 
+    **kwargs
+)
+
+
+# Build CapsNet.
+model = CapsuleNetwork().cuda()
+print(model)
+
+
+# Setup optimizer
+optimizer = optim.Adam(model.parameters(), lr=args.lr)
+
 
 #
-# Create capsule network.
+# Some utility functions for training and testing.
 #
 
-network = CapsuleNetwork().cuda()
-
-print(network)
-
-
-# Converts batches of class indices to classes of one-hot vectors.
+# Function to convert batches of class indices to classes of one-hot vectors.
 def to_one_hot(x, length=10):
 	batch_size = x.size(0)
 	x_one_hot = torch.zeros(batch_size, length)
@@ -57,77 +100,57 @@ def to_one_hot(x, length=10):
 		x_one_hot[i, x[i]] = 1.0
 	return x_one_hot
 
-# This is the test function from the basic Pytorch MNIST example, but adapted to use the capsule network.
-# https://github.com/pytorch/examples/blob/master/mnist/main.py
-def test():
-	network.eval()
-	test_loss = 0
-	correct = 0
-	for data, target in test_loader:
-		target_indices = target
-		target_one_hot = to_one_hot(target_indices)
-
-		data, target = Variable(data, volatile=True).cuda(), Variable(target_one_hot).cuda()
-
-		output = network(data)
-
-		test_loss += network.loss(data, output, target, size_average=False).data[0] # sum up batch loss
-
-		v_mag = torch.sqrt((output**2).sum(dim=2, keepdim=True))
-
-		pred = v_mag.data.max(1, keepdim=True)[1].cpu()
-
-		correct += pred.eq(target_indices.view_as(pred)).sum()
-
-	test_loss /= len(test_loader.dataset)
-	print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-		test_loss,
-		correct,
-		len(test_loader.dataset),
-		100. * correct / len(test_loader.dataset)))
-
-
-# This is the train function from the basic Pytorch MNIST example, but adapted to use the capsule network.
-# https://github.com/pytorch/examples/blob/master/mnist/main.py
+# Training
 def train(epoch):
-	optimizer = optim.Adam(network.parameters(), lr=learning_rate)
+	model.train()
 
-	last_loss = None
-	log_interval = 1
-	network.train()
 	for batch_idx, (data, target) in enumerate(train_loader):
 		target_one_hot = to_one_hot(target)
-
 		data, target = Variable(data).cuda(), Variable(target_one_hot).cuda()
 
 		optimizer.zero_grad()
-
-		output = network(data)
-
-		loss = network.loss(data, output, target)
+		output = model(data) # forward
+		loss = model.loss(data, output, target)
 		loss.backward()
-		last_loss = loss.data[0]
-
 		optimizer.step()
 
-		if batch_idx % log_interval == 0:
+		if batch_idx % args.log_interval == 0:
 			print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-				epoch,
-				batch_idx * len(data),
-				len(train_loader.dataset),
-				100. * batch_idx / len(train_loader),
-				loss.data[0]))
+				epoch, batch_idx * len(data), len(train_loader.dataset),
+				100. * batch_idx / len(train_loader), loss.data[0] )
+			)
 
-		if last_loss < early_stop_loss:
-			break
+# Testing
+def test():
+	model.eval()
+	test_loss = 0
+	correct = 0
 
-	return last_loss
+	for data, target in test_loader:
+		target_indices = target
+		target_one_hot = to_one_hot(target_indices)
+		data, target = Variable(data, volatile=True).cuda(), Variable(target_one_hot).cuda()
+
+		output = model(data)
+
+		# Sum up batch loss by `size_average=False`, later being averaged over all test samples.
+		test_loss += model.loss(data, output, target, size_average=False).data[0]
+		
+		v_mag = torch.sqrt((output**2).sum(dim=2, keepdim=True))
+		pred = v_mag.data.max(1, keepdim=True)[1].cpu()
+		correct += pred.eq(target_indices.view_as(pred)).sum()
+
+	test_loss /= len(test_loader.dataset)
+	test_accuracy = 100. * correct / len(test_loader.dataset)
+	print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
+		test_loss, correct, len(test_loader.dataset), test_accuracy )
+	)
 
 
-num_epochs = 10
-for epoch in range(1, num_epochs + 1):
-	last_loss = train(epoch)
+#
+# Start training.
+#
+
+for epoch in range(1, args.epochs + 1):
+	train(epoch)
 	test()
-	if last_loss < early_stop_loss:
-		print('\nEarly stopping.')
-		break
