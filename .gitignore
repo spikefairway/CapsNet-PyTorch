@@ -1,8 +1,9 @@
 .python-version
-
 /__pycache__/*
 
 /data/*
 
 reconstruction.png
 
+/runs/*
+!/runs/example/

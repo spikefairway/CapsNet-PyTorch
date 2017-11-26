@@ -20,19 +20,35 @@ from capsule_network import CapsuleNetwork
 
 parser = argparse.ArgumentParser(description='CapsNet for MNIST')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
-                    help='input batch size for training (default: 128)')
+					help='input batch size for training (default: 128)')
 parser.add_argument('--test-batch-size', type=int, default=128, metavar='N',
-                    help='input batch size for testing (default: 128)')
+					help='input batch size for testing (default: 128)')
 parser.add_argument('--epochs', type=int, default=10, metavar='N',
-                    help='number of epochs to train (default: 10)')
+					help='number of epochs to train (default: 10)')
 parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
-                    help='learning rate (default: 0.01)')
+					help='learning rate (default: 0.01)')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
-                    help='random seed (default: 1)')
+					help='random seed (default: 1)')
+parser.add_argument('--rec-path', default='reconstruction.png', metavar='R',
+					help='path to save reconstructed test images (default: reconstruction.png)')
 parser.add_argument('--log-interval', type=int, default=1, metavar='N',
-                    help='how many batches to wait before logging training status (default: 1)')
+					help='how many batches to wait before logging training status (default: 1)')
+parser.add_argument('--tb-log-interval', type=int, default=1, metavar='N',
+					help='how many batches to wait before saving TensorBoard event file (default: 10)')
+parser.add_argument('--tb-log-dir', default=None, metavar='LD',
+					help='directory to output TensorBoard event file (default: runs/<DATETIME>)')
 
 args = parser.parse_args()
+
+
+# Setup TensorBoardX summary writer
+from tensorboardX import SummaryWriter
+from datetime import datetime
+import os
+
+if args.tb_log_dir is None:
+	args.tb_log_dir = os.path.join('runs', datetime.now().strftime('%b%d_%H-%M-%S'))
+writer = SummaryWriter(log_dir=args.tb_log_dir)
 
 
 # Initialize the random seed
@@ -49,27 +65,27 @@ transform = transforms.Compose([
 ])
 
 train_loader = torch.utils.data.DataLoader(
-    datasets.MNIST(
-        'data', 
-        train=True, 
-        download=True,
-        transform=transform
-    ),
-    batch_size=args.batch_size, 
-    shuffle=True, 
-    **kwargs
+	datasets.MNIST(
+		'data', 
+		train=True, 
+		download=True,
+		transform=transform
+	),
+	batch_size=args.batch_size, 
+	shuffle=True, 
+	**kwargs
 )
 
 test_loader = torch.utils.data.DataLoader(
-    datasets.MNIST(
-        'data', 
-        train=False, 
-        download=True,
-        transform=transform
-    ),
-    batch_size=args.test_batch_size, 
-    shuffle=True, 
-    **kwargs
+	datasets.MNIST(
+		'data', 
+		train=False, 
+		download=True,
+		transform=transform
+	),
+	batch_size=args.test_batch_size, 
+	shuffle=True, 
+	**kwargs
 )
 
 
@@ -83,9 +99,6 @@ optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
 
 # Get some random test images for reconstruction testing
-#for idx, (data, _) in enumerate(test_loader):
-#	reconstruction_samples = Variable(data, volatile=True).cuda()
-#	break
 test_iter = iter(test_loader)
 reconstruction_samples, _ = test_iter.next()
 reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda()
@@ -96,7 +109,7 @@ def reconstruct_test_images():
 	model.eval()
 
 	output = model(reconstruction_samples)
-	model.reconstruct(output, save_path="reconstruction.png")
+	model.reconstruct(output, save_path=args.rec_path)
 
 
 # Function to convert batches of class indices to classes of one-hot vectors.
@@ -130,9 +143,14 @@ def train(epoch):
 
 			reconstruct_test_images()
 
+		if batch_idx % args.tb_log_interval == 0:
+			# Log train/loss to TensorBoard at every iteration
+			n_iter = (epoch - 1) * len(train_loader) + batch_idx + 1
+			writer.add_scalar('train/loss', loss.data[0], n_iter)
+
 
 # Function for testing.
-def test():
+def test(epoch):
 	model.eval()
 	test_loss = 0
 	correct = 0
@@ -157,8 +175,21 @@ def test():
 		test_loss, correct, len(test_loader.dataset), test_accuracy )
 	)
 
+	# Log test/loss and test/accuracy to TensorBoard at every epoch
+	n_iter = epoch * len(train_loader)
+	writer.add_scalar('test/loss', test_loss, n_iter)
+	writer.add_scalar('test/accuracy', test_accuracy, n_iter)
+
+
+# Visualize network as a graph on TensorBoard
+res = model(torch.autograd.Variable(torch.Tensor(1, 1, 28, 28), requires_grad=True))
+writer.add_graph(model, lastVar=res)
+
 
 # Start training.
 for epoch in range(1, args.epochs + 1):
 	train(epoch)
-	test()
+	test(epoch)
+
+# Close TensorBoardX summary writer
+writer.close()
