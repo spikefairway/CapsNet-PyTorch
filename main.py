@@ -149,14 +149,15 @@ def train(epoch):
 		reconstructed = reconstruct_test_images()
 		vutils.save_image(reconstructed, args.rec_path, normalize=True)
 		
-		if batch_idx % args.tb_log_interval == 0:
-			# Log train/loss to TensorBoard
-			n_iter = (epoch - 1) * len(train_loader) + batch_idx + 1
-			writer.add_scalar('train/loss', loss.data[0], n_iter)
-			writer.add_scalar('train/margin_loss', margin_loss.data[0], n_iter)
-			writer.add_scalar('train/reconstruction_loss', reconstruction_loss.data[0], n_iter)
+		n_iter = epoch * len(train_loader) + batch_idx
 
-		if batch_idx % args.tb_image_interval == 0:
+		if n_iter % args.tb_log_interval == 0:
+			# Log train/loss to TensorBoard
+			writer.add_scalar('train/loss', loss.data[0], n_iter)
+			writer.add_scalar('train/loss_margin', margin_loss.data[0], n_iter)
+			writer.add_scalar('train/loss_reconstruction', reconstruction_loss.data[0], n_iter)
+
+		if n_iter % args.tb_image_interval == 0:
 			# Log reconstructed test images to TensorBoard
 			writer.add_image(
 				'reconstructed/iter_{}'.format(n_iter), 
@@ -202,13 +203,13 @@ def test(epoch):
 	# Log test/loss and test/accuracy to TensorBoard at every epoch
 	n_iter = epoch * len(train_loader)
 	writer.add_scalar('test/loss', test_loss, n_iter)
-	writer.add_scalar('test/margin_loss', test_margin_loss, n_iter)
-	writer.add_scalar('test/reconstruction_loss', test_rec_loss, n_iter)
+	writer.add_scalar('test/loss_margin', test_margin_loss, n_iter)
+	writer.add_scalar('test/loss_reconstruction', test_rec_loss, n_iter)
 	writer.add_scalar('test/accuracy', test_accuracy, n_iter)
 
 
 # Start training.
-for epoch in range(1, args.epochs + 1):
+for epoch in range(args.epochs):
 	train(epoch)
 	test(epoch)
 
