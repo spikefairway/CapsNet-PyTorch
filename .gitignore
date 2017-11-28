@@ -3,7 +3,8 @@
 
 /data/*
 
-reconstruction.png
+original.png
+reconstructed.png
 
 /runs/*
 !/runs/example/

@@ -24,18 +24,20 @@ parser.add_argument('--batch-size', type=int, default=128, metavar='N',
 					help='input batch size for training (default: 128)')
 parser.add_argument('--test-batch-size', type=int, default=128, metavar='N',
 					help='input batch size for testing (default: 128)')
-parser.add_argument('--epochs', type=int, default=30, metavar='N',
+parser.add_argument('--epochs', type=int, default=50, metavar='N',
 					help='number of epochs to train (default: 10)')
-parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
-					help='learning rate (default: 0.01)')
-parser.add_argument('--lr-decay-rate', type=float, default=0.1, metavar='DR',
-					help='factor to decay learning rate (default: 0.1)')
-parser.add_argument('--lr-decay-epoch', type=int, default=10, metavar='DE',
-					help='how many epochs to wait before decaying learning rate (default: 10)')
+parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
+					help='learning rate (default: 0.001)')
+parser.add_argument('--lr-decay-factor', type=float, default=0.9, metavar='DF',
+					help='factor to decay learning rate (default: 0.9)')
+parser.add_argument('--lr-decay-epoch', type=int, default=1, metavar='DE',
+					help='how many epochs to wait before decaying learning rate (default: 1)')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
 					help='random seed (default: 1)')
-parser.add_argument('--rec-path', default='reconstruction.png', metavar='R',
-					help='path to save reconstructed test images (default: reconstruction.png)')
+parser.add_argument('--org-path', default='original.png', metavar='O',
+					help='path to save test images to reconstruct (default: original.png)')
+parser.add_argument('--rec-path', default='reconstructed.png', metavar='R',
+					help='path to save reconstructed test images (default: reconstructed.png)')
 parser.add_argument('--tb-log-interval', type=int, default=10, metavar='N',
 					help='how many batches to wait before saving training status to TensorBoard (default: 10)')
 parser.add_argument('--tb-image-interval', type=int, default=100, metavar='N',
@@ -106,7 +108,10 @@ optimizer = optim.Adam(model.parameters(), lr=args.lr)
 # Get some random test images for reconstruction testing
 test_iter = iter(test_loader)
 reconstruction_samples, _ = test_iter.next()
+
+vutils.save_image(reconstruction_samples, args.org_path, normalize=True)
 writer.add_image('original', vutils.make_grid(reconstruction_samples, normalize=True))
+
 reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda()
 
 
@@ -144,7 +149,7 @@ def decay_lr(epoch):
 	if epoch % args.lr_decay_epoch != (args.lr_decay_epoch - 1):
 		return
 	for param_group in optimizer.param_groups:
-		param_group['lr'] *= args.lr_decay_rate
+		param_group['lr'] *= args.lr_decay_factor
 
 
 # Function for training.
