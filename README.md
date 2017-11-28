@@ -7,8 +7,8 @@ A PyTorch implementation of CapsNet based on Geoffrey Hinton's paper [Dynamic Ro
 This figure is from [CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow).
 
 ## Current Status
-- The current `test accuracy =  xx.xx`, see `Results` section for details.
-- Trying to find the reason why the test accuracy is lower than the one reported in the paper.
+- The current `test accuracy =  xx.xx`, see `Results` section for details
+- Trying to find the reason why the test accuracy is lower than the one reported in the paper
 
 ## Requirements
 
