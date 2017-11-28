@@ -6,16 +6,55 @@ A PyTorch implementation of CapsNet based on Geoffrey Hinton's paper [Dynamic Ro
 
 (From [CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow))
 
+> **Current Status:**
+> 1. The current `test accuracy =  xx.xx`, see `Results` section for details.
+> 2. Trying to find the reason why the test accuracy is lower than the one reported in the paper.
+
 ## Requirements
 
-- PyTorch (with CUDA)
-- TensorBoard
-- TensorBoardX
+- [PyTorch](http://pytorch.org/) (with CUDA)
+- [TensorBoard](https://github.com/tensorflow/tensorboard)
+- [tensorboard-pytorch](https://github.com/lanpa/tensorboard-pytorch)
 
 ## Usage
 
-```$ python main.py```
+**Step 1.** Clone this repository
+
+```bash
+$ git clone https://github.com/motokimura/CapsNet-PyTorch.git
+$ cd CapsNet-PyTorch
+```
+
+**Step 2.** Start the training
+
+```bash
+$ python main.py
+```
+
+**Step 3.** Check training status and validation accuracy from TensorBoard
+
+```bash
+# In another terminal window, 
+$ cd CapsNet-PyTorch
+$ tensorboard --logdir ./runs
+
+# Then, open "http://localhost:6006" from your browser and 
+# you will see something like the screenshots in the `Results` section.
+```
+
+Some training hyper parameters can be specified from the command line options of `main.py`. 
+
+In default, batch size is 128 both for training and validation, and epoch is set to 50. 
+Learning rate of Adam optimizer is set to 0.001 and is exponentially decayed every epoch with the factor of 0.9. 
+
+For more details, type `python main.py --help`.
 
 ## Results
 
+Comming soon..
+
 ## References
+
+- [naturomics/CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow)
+- [XifengGuo/CapsNet-Keras](https://github.com/XifengGuo/CapsNet-Keras)
+- [timomernick/pytorch-capsule](https://github.com/timomernick/pytorch-capsule)
