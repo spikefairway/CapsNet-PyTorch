@@ -3,10 +3,10 @@
 A PyTorch implementation of CapsNet based on Geoffrey Hinton's paper [Dynamic Routing Between Capsules](https://arxiv.org/abs/1710.09829).
 
 ![capsVSneuron](images/capsule_vs_neuron.png)
-(From [CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow))
 
+This figure is from [CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow)).
 
-**Current Status:**
+## Current Status
 - The current `test accuracy =  xx.xx`, see `Results` section for details.
 - Trying to find the reason why the test accuracy is lower than the one reported in the paper.
 
