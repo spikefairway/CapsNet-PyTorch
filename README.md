@@ -4,7 +4,7 @@ A PyTorch implementation of CapsNet based on Geoffrey Hinton's paper [Dynamic Ro
 
 ![capsVSneuron](images/capsule_vs_neuron.png)
 
-This figure is from [CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow)).
+This figure is from [CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow).
 
 ## Current Status
 - The current `test accuracy =  xx.xx`, see `Results` section for details.
