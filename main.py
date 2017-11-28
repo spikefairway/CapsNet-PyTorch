@@ -48,7 +48,7 @@ parser.add_argument('--tb-log-dir', default=None, metavar='LD',
 args = parser.parse_args()
 
 
-# Setup TensorBoardX summary writer
+# Setup TensorBoardX summary writer.
 from tensorboardX import SummaryWriter
 from datetime import datetime
 import os
@@ -58,12 +58,12 @@ if args.tb_log_dir is None:
 writer = SummaryWriter(log_dir=args.tb_log_dir)
 
 
-# Initialize the random seed
+# Initialize the random seed.
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed(args.seed)
 
 
-# Setup data loaders for train/test sets
+# Setup data loaders for train/test sets.
 kwargs = {'num_workers': 1, 'pin_memory': True}
 
 transform = transforms.Compose([
@@ -105,7 +105,7 @@ print(model)
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
 
-# Get some random test images for reconstruction testing
+# Get some random test images for reconstruction testing.
 test_iter = iter(test_loader)
 reconstruction_samples, _ = test_iter.next()
 
@@ -115,7 +115,7 @@ writer.add_image('original', vutils.make_grid(reconstruction_samples, normalize=
 reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda()
 
 
-# Function to reconstruct the test images
+# Function to reconstruct the test images.
 def reconstruct_test_images():
 	model.eval()
 
@@ -136,7 +136,7 @@ def to_one_hot(x, length=10):
 	return x_one_hot
 
 
-# Function to get learning rates from the optimizer
+# Function to get learning rates from the optimizer.
 def get_lr():
 	lr_params = []
 	for param_group in optimizer.param_groups:
@@ -144,7 +144,7 @@ def get_lr():
 	return lr_params
 
 
-# Function to decay learning rate
+# Function to decay learning rate.
 def decay_lr(epoch):
 	if epoch % args.lr_decay_epoch != (args.lr_decay_epoch - 1):
 		return
@@ -161,7 +161,7 @@ def train(epoch):
 		data, target = Variable(data).cuda(), Variable(target_one_hot).cuda()
 
 		optimizer.zero_grad()
-		output = model(data) # forward
+		output = model(data) # forward.
 		loss, margin_loss, reconstruction_loss = model.loss(data, output, target)
 		loss.backward()
 		optimizer.step()
@@ -177,17 +177,17 @@ def train(epoch):
 		n_iter = epoch * len(train_loader) + batch_idx
 
 		if n_iter % args.tb_log_interval == 0:
-			# Log train/loss to TensorBoard
+			# Log train/loss to TensorBoard.
 			writer.add_scalar('train/loss', loss.data[0], n_iter)
 			writer.add_scalar('train/loss_margin', margin_loss.data[0], n_iter)
 			writer.add_scalar('train/loss_reconstruction', reconstruction_loss.data[0], n_iter)
 
-			# Log base learning rate to TensorBoard
+			# Log base learning rate to TensorBoard.
 			lr = get_lr()[0]
 			writer.add_scalar('lr', lr, n_iter)
 
 		if n_iter % args.tb_image_interval == 0:
-			# Log reconstructed test images to TensorBoard
+			# Log reconstructed test images to TensorBoard.
 			writer.add_image(
 				'reconstructed/iter_{}'.format(n_iter), 
 				vutils.make_grid(reconstructed, normalize=True)
@@ -231,7 +231,7 @@ def test(epoch):
 		test_loss, correct, len(test_loader.dataset), test_accuracy )
 	)
 
-	# Log test/loss and test/accuracy to TensorBoard at every epoch
+	# Log test/loss and test/accuracy to TensorBoard at every epoch.
 	n_iter = epoch * len(train_loader)
 	writer.add_scalar('test/loss', test_loss, n_iter)
 	writer.add_scalar('test/loss_margin', test_margin_loss, n_iter)
@@ -244,5 +244,5 @@ for epoch in range(args.epochs):
 	train(epoch)
 	test(epoch)
 
-# Close TensorBoardX summary writer
+# Close TensorBoardX summary writer.
 writer.close()
