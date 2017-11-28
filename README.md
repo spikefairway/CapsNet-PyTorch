@@ -1,11 +1,21 @@
 # pytorch-capsule
 
-A Pytorch implementation of Hinton's "Dynamic Routing Between Capsules".
+A PyTorch implementation of CapsNet based on Geoffrey Hinton's paper [Dynamic Routing Between Capsules](https://arxiv.org/abs/1710.09829).
 
-https://arxiv.org/pdf/1710.09829.pdf
+![capsVSneuron](images/capsule_vs_neuron.png)
 
-Thanks to @naturomics for his Tensorflow implementation which was a useful guide and sanity check.  https://github.com/naturomics/CapsNet-Tensorflow
+(From [CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow))
 
-To use:
+## Requirements
+
+- PyTorch (with CUDA)
+- TensorBoard
+- TensorBoardX
+
+## Usage
 
 ```$ python main.py```
+
+## Results
+
+## References
