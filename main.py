@@ -24,10 +24,14 @@ parser.add_argument('--batch-size', type=int, default=128, metavar='N',
 					help='input batch size for training (default: 128)')
 parser.add_argument('--test-batch-size', type=int, default=128, metavar='N',
 					help='input batch size for testing (default: 128)')
-parser.add_argument('--epochs', type=int, default=10, metavar='N',
+parser.add_argument('--epochs', type=int, default=30, metavar='N',
 					help='number of epochs to train (default: 10)')
 parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
 					help='learning rate (default: 0.01)')
+parser.add_argument('--lr-decay-rate', type=float, default=0.1, metavar='DR',
+					help='factor to decay learning rate (default: 0.1)')
+parser.add_argument('--lr-decay-epoch', type=int, default=10, metavar='DE',
+					help='how many epochs to wait before decaying learning rate (default: 10)')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
 					help='random seed (default: 1)')
 parser.add_argument('--rec-path', default='reconstruction.png', metavar='R',
@@ -127,6 +131,22 @@ def to_one_hot(x, length=10):
 	return x_one_hot
 
 
+# Function to get learning rates from the optimizer
+def get_lr():
+	lr_params = []
+	for param_group in optimizer.param_groups:
+		lr_params.append(param_group['lr'])
+	return lr_params
+
+
+# Function to decay learning rate
+def decay_lr(epoch):
+	if epoch % args.lr_decay_epoch != (args.lr_decay_epoch - 1):
+		return
+	for param_group in optimizer.param_groups:
+		param_group['lr'] *= args.lr_decay_rate
+
+
 # Function for training.
 def train(epoch):
 	model.train()
@@ -157,12 +177,18 @@ def train(epoch):
 			writer.add_scalar('train/loss_margin', margin_loss.data[0], n_iter)
 			writer.add_scalar('train/loss_reconstruction', reconstruction_loss.data[0], n_iter)
 
+			# Log base learning rate to TensorBoard
+			lr = get_lr()[0]
+			writer.add_scalar('lr', lr, n_iter)
+
 		if n_iter % args.tb_image_interval == 0:
 			# Log reconstructed test images to TensorBoard
 			writer.add_image(
 				'reconstructed/iter_{}'.format(n_iter), 
 				vutils.make_grid(reconstructed, normalize=True)
 			)
+
+	decay_lr(epoch)
 
 
 # Function for testing.
