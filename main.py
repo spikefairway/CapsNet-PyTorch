@@ -26,8 +26,8 @@ parser.add_argument('--test-batch-size', type=int, default=128, metavar='N',
 					help='input batch size for testing (default: 128)')
 parser.add_argument('--epochs', type=int, default=50, metavar='N',
 					help='number of epochs to train (default: 10)')
-parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
-					help='learning rate (default: 0.001)')
+parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
+					help='learning rate (default: 0.01)')
 parser.add_argument('--lr-decay-factor', type=float, default=0.9, metavar='DF',
 					help='factor to decay learning rate (default: 0.9)')
 parser.add_argument('--lr-decay-epoch', type=int, default=1, metavar='DE',
@@ -52,6 +52,12 @@ parser.add_argument('--gpu', type=int, default=0, metavar='G',
 args = parser.parse_args()
 
 
+# Check CUDA availability.
+if args.gpu >= 0:
+	assert torch.cuda.is_available(), \
+		'Aborted. CUDA seems to be not available. Use `--gpu -1` option to train with CPUs.'
+
+
 # Setup TensorBoardX summary writer.
 from tensorboardX import SummaryWriter
 from datetime import datetime
@@ -68,7 +74,7 @@ torch.cuda.manual_seed(args.seed)
 
 
 # Setup data loaders for train/test sets.
-kwargs = {'num_workers': 1, 'pin_memory': True}
+kwargs = {'num_workers': 1, 'pin_memory': True} if (args.gpu >= 0) else {}
 
 transform = transforms.Compose([
 	transforms.ToTensor(),
@@ -102,7 +108,9 @@ test_loader = torch.utils.data.DataLoader(
 
 # Build CapsNet.
 model = CapsuleNetwork(routing_iters=args.routing, gpu=args.gpu)
-model = model.cuda(args.gpu)
+if args.gpu >=0:
+	model = model.cuda(args.gpu)
+
 print(model)
 
 
@@ -117,7 +125,9 @@ reconstruction_samples, _ = test_iter.next()
 vutils.save_image(reconstruction_samples, args.org_path, normalize=True)
 writer.add_image('original', vutils.make_grid(reconstruction_samples, normalize=True))
 
-reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda(args.gpu)
+reconstruction_samples = Variable(reconstruction_samples, volatile=True)
+if args.gpu >= 0:
+	reconstruction_samples = reconstruction_samples.cuda(args.gpu)
 
 
 # Function to reconstruct the test images.
@@ -163,7 +173,10 @@ def train(epoch):
 
 	for batch_idx, (data, target) in enumerate(train_loader):
 		target_one_hot = to_one_hot(target)
-		data, target = Variable(data).cuda(args.gpu), Variable(target_one_hot).cuda(args.gpu)
+
+		data, target = Variable(data), Variable(target_one_hot)
+		if args.gpu >= 0:
+			data, target = data.cuda(args.gpu), target.cuda(args.gpu)
 
 		optimizer.zero_grad()
 		output = model(data) # forward.
@@ -172,7 +185,7 @@ def train(epoch):
 		optimizer.step()
 
 		print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-			epoch, batch_idx * len(data), len(train_loader.dataset),
+			epoch, batch_idx * args.batch_size, len(train_loader.dataset),
 			100. * batch_idx / len(train_loader), loss.data[0] )
 		)
 
@@ -210,7 +223,10 @@ def test(epoch):
 	for data, target in test_loader:
 		target_indices = target
 		target_one_hot = to_one_hot(target_indices)
-		data, target = Variable(data, volatile=True).cuda(args.gpu), Variable(target_one_hot).cuda(args.gpu)
+
+		data, target = Variable(data, volatile=True), Variable(target_one_hot)
+		if args.gpu >= 0:
+			data, target = data.cuda(args.gpu), target.cuda(args.gpu)
 
 		output = model(data)
 

@@ -75,7 +75,9 @@ class CapsuleNetwork(nn.Module):
 		# v_mag: [batch_size, 10, 1]
 
 		# Calculate left and right max() terms from Eq.4 in the paper.
-		zero = Variable(torch.zeros(1)).cuda(self.gpu)
+		zero = Variable(torch.zeros(1))
+		if self.gpu >= 0:
+			zero = zero.cuda(self.gpu)
 		m_plus = 0.9
 		m_minus = 0.1
 		max_l = torch.max(m_plus - v_mag, zero).view(batch_size, -1)**2
@@ -148,7 +150,9 @@ class CapsuleNetwork(nn.Module):
 
 			# Copy only the maximum capsule index from this batch sample.
 			# This masks out (leaves as zero) the other capsules in this sample.
-			batch_masked = Variable(torch.zeros(input_batch.size())).cuda(self.gpu)
+			batch_masked = Variable(torch.zeros(input_batch.size()))
+			if self.gpu >= 0:
+				batch_masked = batch_masked.cuda(self.gpu)
 			batch_masked[v_max_index[batch_idx]] = input_batch[v_max_index[batch_idx]]
 			# batch_masked: [10, 16]
 

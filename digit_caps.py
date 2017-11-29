@@ -56,7 +56,9 @@ class DigitCaps(nn.Module):
         # in backward, no gradient can flow from `u_hat_detached` back to `u_hat`.
 
 		# Initialize routing logits to zero.
-		b_ij = Variable(torch.zeros(self.in_capsules, self.out_capsules, 1)).cuda(self.gpu)
+		b_ij = Variable(torch.zeros(self.in_capsules, self.out_capsules, 1))
+		if self.gpu >= 0:
+			b_ij = b_ij.cuda(self.gpu)
 		# b_ij: [in_capsules=1152, out_capsules=10, 1]
 
 		# Iterative routing.
