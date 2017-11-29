@@ -32,6 +32,8 @@ parser.add_argument('--lr-decay-factor', type=float, default=0.9, metavar='DF',
 					help='factor to decay learning rate (default: 0.9)')
 parser.add_argument('--lr-decay-epoch', type=int, default=1, metavar='DE',
 					help='how many epochs to wait before decaying learning rate (default: 1)')
+parser.add_argument('--routing', type=int, default=3, metavar='R',
+					help='iteration numbers for dymanic routing b/w capsules (default: 3)')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
 					help='random seed (default: 1)')
 parser.add_argument('--org-path', default='original.png', metavar='O',
@@ -44,6 +46,8 @@ parser.add_argument('--tb-image-interval', type=int, default=100, metavar='N',
 					help='how many batches to wait before saving reconstructed images to TensorBoard (default: 100)')
 parser.add_argument('--tb-log-dir', default=None, metavar='LD',
 					help='directory to output TensorBoard event file (default: runs/<DATETIME>)')
+parser.add_argument('--gpu', type=int, default=0, metavar='G',
+					help='id of the GPU to use (default: 0)')
 
 args = parser.parse_args()
 
@@ -97,7 +101,8 @@ test_loader = torch.utils.data.DataLoader(
 
 
 # Build CapsNet.
-model = CapsuleNetwork().cuda()
+model = CapsuleNetwork(routing_iters=args.routing, gpu=args.gpu)
+model = model.cuda(args.gpu)
 print(model)
 
 
@@ -112,7 +117,7 @@ reconstruction_samples, _ = test_iter.next()
 vutils.save_image(reconstruction_samples, args.org_path, normalize=True)
 writer.add_image('original', vutils.make_grid(reconstruction_samples, normalize=True))
 
-reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda()
+reconstruction_samples = Variable(reconstruction_samples, volatile=True).cuda(args.gpu)
 
 
 # Function to reconstruct the test images.
@@ -158,7 +163,7 @@ def train(epoch):
 
 	for batch_idx, (data, target) in enumerate(train_loader):
 		target_one_hot = to_one_hot(target)
-		data, target = Variable(data).cuda(), Variable(target_one_hot).cuda()
+		data, target = Variable(data).cuda(args.gpu), Variable(target_one_hot).cuda(args.gpu)
 
 		optimizer.zero_grad()
 		output = model(data) # forward.
@@ -205,7 +210,7 @@ def test(epoch):
 	for data, target in test_loader:
 		target_indices = target
 		target_one_hot = to_one_hot(target_indices)
-		data, target = Variable(data, volatile=True).cuda(), Variable(target_one_hot).cuda()
+		data, target = Variable(data, volatile=True).cuda(args.gpu), Variable(target_one_hot).cuda(args.gpu)
 
 		output = model(data)
 

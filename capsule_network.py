@@ -18,8 +18,10 @@ from decoder import Decoder
 
 
 class CapsuleNetwork(nn.Module):
-	def __init__(self):
+	def __init__(self, routing_iters, gpu):
 		super(CapsuleNetwork, self).__init__()
+
+		self.gpu = gpu
 
 		# Build modules for CapsNet.
 
@@ -30,7 +32,7 @@ class CapsuleNetwork(nn.Module):
 		self.primary_caps = PrimaryCaps()
 
 		## DigitCaps layer
-		self.digit_caps = DigitCaps()
+		self.digit_caps = DigitCaps(routing_iters=routing_iters, gpu=gpu)
 
 		## Decoder
 		self.decoder = Decoder()
@@ -73,7 +75,7 @@ class CapsuleNetwork(nn.Module):
 		# v_mag: [batch_size, 10, 1]
 
 		# Calculate left and right max() terms from Eq.4 in the paper.
-		zero = Variable(torch.zeros(1)).cuda()
+		zero = Variable(torch.zeros(1)).cuda(self.gpu)
 		m_plus = 0.9
 		m_minus = 0.1
 		max_l = torch.max(m_plus - v_mag, zero).view(batch_size, -1)**2
@@ -114,13 +116,13 @@ class CapsuleNetwork(nn.Module):
 		error = torch.sum(error, dim=1)
 		# error: [batch_size]
 
-		factor = 0.0005
-		error *= factor
-
 		if size_average:
 			error = error.mean() # average over batch.
 		else:
 			error = error.sum() # sum over batch.
+
+		rec_loss_weight = 0.0005
+		error *= rec_loss_weight
 
 		return error
 
@@ -146,7 +148,7 @@ class CapsuleNetwork(nn.Module):
 
 			# Copy only the maximum capsule index from this batch sample.
 			# This masks out (leaves as zero) the other capsules in this sample.
-			batch_masked = Variable(torch.zeros(input_batch.size())).cuda()
+			batch_masked = Variable(torch.zeros(input_batch.size())).cuda(self.gpu)
 			batch_masked[v_max_index[batch_idx]] = input_batch[v_max_index[batch_idx]]
 			# batch_masked: [10, 16]
 
