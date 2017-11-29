@@ -23,9 +23,9 @@ class Decoder(nn.Module):
 
 		out_size = self.out_image_width * self.out_image_height * self.out_image_channels
 
-		self.linear0 = nn.Linear(self.in_vector_size, int((out_size * 2) / 3))
-		self.linear1 = nn.Linear(int((out_size * 2) / 3), int((out_size * 3) / 2))
-		self.linear2 = nn.Linear(int((out_size * 3) / 2), out_size)
+		self.linear0 = nn.Linear(in_features=self.in_vector_size, out_features=512)
+		self.linear1 = nn.Linear(in_features=512, out_features=1024)
+		self.linear2 = nn.Linear(in_features=1024, out_features=out_size)
 		
 		self.relu = nn.ReLU(inplace=True)
 		self.sigmoid = nn.Sigmoid()
