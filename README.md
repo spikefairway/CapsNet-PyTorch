@@ -76,6 +76,10 @@ CapsNet-v4  |  3 | yes| 0.49 | *0.25*
 
 ![](images/reconstruction_results.png)
 
+## License
+
+[MIT License](LICENSE.txt)
+
 ## References
 
 - [naturomics/CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow)
