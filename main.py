@@ -73,33 +73,35 @@ torch.manual_seed(args.seed)
 torch.cuda.manual_seed(args.seed)
 
 
-# Setup data loaders for train/test sets.
+# Setup data loaders for train/test data.
+train_dataset = datasets.MNIST(
+	'data', train=True, download=True, 
+	transform=transforms.Compose([
+		transforms.RandomCrop(padding=2, size=(28, 28)), # data augmentation
+		transforms.ToTensor(),
+		transforms.Normalize((0.1307,), (0.3081,))
+	])
+)
+
+test_dataset = datasets.MNIST(
+	'data', train=False, download=True, 
+	transform=transforms.Compose([
+		transforms.ToTensor(),
+		transforms.Normalize((0.1307,), (0.3081,))
+	])
+)
+
 kwargs = {'num_workers': 1, 'pin_memory': True} if (args.gpu >= 0) else {}
 
-transform = transforms.Compose([
-	transforms.ToTensor(),
-	transforms.Normalize((0.1307,), (0.3081,))
-])
-
 train_loader = torch.utils.data.DataLoader(
-	datasets.MNIST(
-		'data', 
-		train=True, 
-		download=True,
-		transform=transform
-	),
+	train_dataset,
 	batch_size=args.batch_size, 
 	shuffle=True, 
 	**kwargs
 )
 
 test_loader = torch.utils.data.DataLoader(
-	datasets.MNIST(
-		'data', 
-		train=False, 
-		download=True,
-		transform=transform
-	),
+	test_dataset,
 	batch_size=args.test_batch_size, 
 	shuffle=True, 
 	**kwargs
