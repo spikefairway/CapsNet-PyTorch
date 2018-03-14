@@ -64,7 +64,7 @@ class DigitCaps(nn.Module):
 		# Iterative routing.
 		for iteration in range(self.routing_iters):
 			# Convert routing logits to softmax.
-			c_ij = F.softmax(b_ij.unsqueeze(0))
+			c_ij = F.softmax(b_ij.unsqueeze(0), dim=1)
 			c_ij = torch.cat([c_ij] * batch_size, dim=0).unsqueeze(4)
 			# c_ij: [batch_size, in_capsules=1152, out_capsules=10, 1, 1]
 
