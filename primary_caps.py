@@ -10,7 +10,7 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 
-from .squash import squash
+from squash import squash
 
 
 class ConvUnit(nn.Module):
@@ -57,7 +57,7 @@ class PrimaryCaps(nn.Module):
         u = self.capsules(x)
         # u: [batch_size, 32 * 8, 6, 6]
 
-        u = u.view(batch_size, capsule_size, -1)
+        u = u.view(batch_size, self.capsule_size, -1)
         # u: [batch_size, capsule_size=8, 1152=6*6*32]
 
         u = u.transpose(1, 2)

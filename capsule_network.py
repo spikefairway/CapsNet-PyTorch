@@ -11,9 +11,9 @@ from torchvision import datasets, transforms
 import torchvision.utils as vutils
 import torch.nn.functional as F
 
-from .primary_caps import PrimaryCaps
-from .digit_caps import DigitCaps
-from .decoder import Decoder
+from primary_caps import PrimaryCaps
+from digit_caps import DigitCaps
+from decoder import Decoder
 
 class Conv1(nn.Module):
     def __init__(self, in_channels=1, out_channels=256,

@@ -10,7 +10,7 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 
-from .squash import squash
+from squash import squash
 
 
 class DigitCaps(nn.Module):
