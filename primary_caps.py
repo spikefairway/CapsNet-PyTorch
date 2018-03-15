@@ -40,43 +40,25 @@ class PrimaryCaps(nn.Module):
                  capsule_size=8, kernel_size=9, stride=2):
         super(PrimaryCaps, self).__init__()
 
-        self.conv1_out = in_channels # out_channels of Conv1, a ConvLayer just before PrimaryCaps
+        self.in_channels = in_channels # out_channels of Conv1, a ConvLayer just before PrimaryCaps
         self.capsule_units = num_capsule_units
         self.capsule_size = capsule_size
 
-        # 32 capsules containing with Conv2d(256, 8)
-        def create_conv_unit(unit_idx):
-            unit = ConvUnit(
-                in_channels=self.conv1_out, 
-                out_channels=self.capsule_size,
-                kernel_size=kernel_size,
-                stride=stride
-            )
-            self.add_module("unit_" + str(unit_idx), unit)
-            return unit
-
-        self.conv_units = [create_conv_unit(i) for i in range(self.capsule_units)]
+        # 32 channels of 8D capsules
+        self.capsules = ConvUnit(self.in_channels,
+                                 self.capsule_units * self.capsule_size,
+                                 kernel_size=kernel_size, stride=stride)
 
     def forward(self, x):
         # x: [batch_size, 256, 20, 20]
         batch_size = x.size(0)
+        assert x.size(1) == self.in_channels
 
-        u = []
-        for i in range(self.capsule_units):
-            u_i = self.conv_units[i](x)
-            # u_i: [batch_size, capsule_size=8, 6, 6]
+        u = self.capsules(x)
+        # u: [batch_size, 32 * 8, 6, 6]
 
-            u_i = u_i.view(batch_size, self.capsule_size, -1, 1)
-            # u_i: [batch_size, capsule_size=8, 36, 1]
-
-            u.append(u_i)
-        # u: [batch_size, capsule_size=8, 36, 1] x capsule_units=32
-
-        u = torch.cat(u, dim=3)
-        # u: [batch_size, capsule_size=8, 36, capsule_units=32]
-
-        u = u.view(batch_size, self.capsule_size, -1)
-        # u: [batch_size, capsule_size=8, 1152=36*32]
+        u = u.view(batch_size, capsule_size, -1)
+        # u: [batch_size, capsule_size=8, 1152=6*6*32]
 
         u = u.transpose(1, 2)
         # u: [batch_size, 1152, capsule_size=8]
