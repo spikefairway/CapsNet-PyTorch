@@ -46,16 +46,9 @@ parser.add_argument('--tb-image-interval', type=int, default=100, metavar='N',
                     help='how many batches to wait before saving reconstructed images to TensorBoard (default: 100)')
 parser.add_argument('--tb-log-dir', default=None, metavar='LD',
                     help='directory to output TensorBoard event file (default: runs/<DATETIME>)')
-parser.add_argument('--gpu', type=int, default=0, metavar='G',
-                    help='id of the GPU to use (default: 0)')
 
 args = parser.parse_args()
 
-
-# Check CUDA availability.
-if args.gpu >= 0:
-    assert torch.cuda.is_available(), \
-        'Aborted. CUDA seems to be not available. Use `--gpu -1` option to train with CPUs.'
 
 
 # Setup TensorBoardX summary writer.
@@ -92,27 +85,24 @@ test_dataset = datasets.MNIST(
     ])
 )
 
-kwargs = {'num_workers': 1, 'pin_memory': True} if (args.gpu >= 0) else {}
 
 train_loader = torch.utils.data.DataLoader(
     train_dataset,
     batch_size=args.batch_size, 
     shuffle=True, 
-    **kwargs
 )
 
 test_loader = torch.utils.data.DataLoader(
     test_dataset,
     batch_size=args.test_batch_size, 
     shuffle=True, 
-    **kwargs
 )
 
 
 # Build CapsNet.
-model = CapsuleNetwork(routing_iters=args.routing, gpu=args.gpu)
-if args.gpu >=0:
-    model = model.cuda(args.gpu)
+model = CapsuleNetwork(routing_iters=args.routing)
+if torch.cuda.is_available():
+    model = model.cuda()
 
 print(model)
 
@@ -129,8 +119,8 @@ vutils.save_image(reconstruction_samples, args.org_path, normalize=True)
 writer.add_image('original', vutils.make_grid(reconstruction_samples, normalize=True))
 
 reconstruction_samples = Variable(reconstruction_samples, volatile=True)
-if args.gpu >= 0:
-    reconstruction_samples = reconstruction_samples.cuda(args.gpu)
+if torch.cuda.is_available():
+    reconstruction_samples = reconstruction_samples.cuda()
 
 
 # Function to reconstruct the test images.
@@ -196,8 +186,8 @@ def train(epoch):
         target_one_hot = to_one_hot(target)
 
         data, target = Variable(data), Variable(target_one_hot)
-        if args.gpu >= 0:
-            data, target = data.cuda(args.gpu), target.cuda(args.gpu)
+        if torch.cuda.is_available():
+            data, target = data.cuda(), target.cuda()
 
         optimizer.zero_grad()
         output = model(data) # forward.
@@ -273,8 +263,8 @@ def test(epoch):
         target_one_hot = to_one_hot(target_indices)
 
         data, target = Variable(data, volatile=True), Variable(target_one_hot)
-        if args.gpu >= 0:
-            data, target = data.cuda(args.gpu), target.cuda(args.gpu)
+        if torch.cuda.is_available():
+            data, target = data.cuda(), target.cuda()
 
         output = model(data)
 
