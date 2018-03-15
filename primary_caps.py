@@ -42,16 +42,16 @@ class PrimaryCaps(nn.Module):
 		self.capsule_units = 32
 		self.capsule_size = 8
 
-                self.capsules = ConvUnit(
-                        in_channels=self.conv1_out,
-                        out_channels=self.capsule_size * self.capsule_units
-                )
+		self.capsules = ConvUnit(
+			in_channels=self.conv1_out,
+			out_channels=self.capsule_size * self.capsule_units
+		)
 
 	def forward(self, x):
 		# x: [batch_size, 256, 20, 20]
 		batch_size = x.size(0)
 
-                u = self.capsules(x)
+		u = self.capsules(x)
 		# u: [batch_size, 8*32, 6, 6]
 
 		u = u.view(batch_size, self.capsule_size, -1)
