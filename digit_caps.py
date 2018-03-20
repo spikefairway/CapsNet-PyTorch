@@ -80,7 +80,7 @@ class DigitCaps(nn.Module):
 				# v_j: [batch_size, 1, 10, 16]
 				
 				# Update b_ij
-				b_batch = b_batch + (u_hat_detached * v).sum(-1)
+				b_batch = b_batch + (u_hat_detached * v_j).sum(-1)
 				# (u_hat * v_j).sum(-1) : [batch_size, 1152, 10]
 
 				c_ij = F.softmax(b_batch.view(-1, self.out_capsules), dim=1).view(-1, self.in_capsules, self.out_capsules, 1)
