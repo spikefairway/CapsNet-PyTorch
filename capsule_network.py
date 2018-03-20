@@ -135,7 +135,7 @@ class CapsuleNetwork(nn.Module):
 
 		# Mask with true label
 		mask0 = target.unsqueeze(2)
-                mask = torch.stack([mask0] * input.size(2), dim=2)
+		mask = torch.stack([mask0] * input.size(2), dim=2)
                 # mask: [batch_size, 10, 16]
 
 		# Stack masked capsules over the batch dimension.
