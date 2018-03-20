@@ -100,14 +100,15 @@ class CapsuleNetwork(nn.Module):
 
 		return L_c
 
-	def reconstruction_loss(self, images, input, size_average=True):
+	def reconstruction_loss(self, images, input, target, size_average=True):
 		# images: [batch_size, 1, 28, 28]
 		# input: [batch_size, 10, 16]
+		# target: [batch_size, 10]
 
 		batch_size = images.size(0)
 
 		# Reconstruct input image.
-		reconstructed = self.reconstruct(input)
+		reconstructed = self.reconstruct(input, target)
 		# reconstructed: [batch_size, 1, 28, 28]
 
 		# The reconstruction loss is the sum squared difference between the input image and reconstructed image.
@@ -128,39 +129,17 @@ class CapsuleNetwork(nn.Module):
 
 		return error
 
-	def reconstruct(self, input):
+	def reconstruct(self, input, target):
 		# input: [batch_size, 10, 16]
+		# target: [batch_size, 10]
 
-		# Get the lengths of capsule outputs.
-		v_mag = torch.sqrt((input**2).sum(dim=2))
-		# v_mag: [batch_size, 10]
-
-		# Get index of longest capsule output.
-		_, v_max_index = v_mag.max(dim=1)
-		v_max_index = v_max_index.data
-		# v_max_index: [batch_size]
-
-		# Use just the winning capsule's representation (and zeros for other capsules) to reconstruct input image.
-		batch_size = input.size(0)
-		all_masked = [None] * batch_size
-		for batch_idx in range(batch_size):
-			# Get one sample from the batch.
-			input_batch = input[batch_idx]
-			# input_bacth: [10, 16]
-
-			# Copy only the maximum capsule index from this batch sample.
-			# This masks out (leaves as zero) the other capsules in this sample.
-			batch_masked = Variable(torch.zeros(input_batch.size()))
-			if self.gpu >= 0:
-				batch_masked = batch_masked.cuda(self.gpu)
-			batch_masked[v_max_index[batch_idx]] = input_batch[v_max_index[batch_idx]]
-			# batch_masked: [10, 16]
-
-			all_masked[batch_idx] = batch_masked
-		# all_masked: [10, 16] * batch_size
+		# Mask with true label
+		mask0 = target.unsqueeze(2)
+                mask = torch.stack([mask0] * input.size(2), dim=2)
+                # mask: [batch_size, 10, 16]
 
 		# Stack masked capsules over the batch dimension.
-		masked = torch.stack(all_masked, dim=0)
+		masked = input * mask
 		# masked: [batch_size, 10, 16]
 		masked = masked.view(batch_size, -1)
 		# masked: [batch_size, 160]
