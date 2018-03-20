@@ -115,35 +115,6 @@ if args.gpu >=0:
 
 print(model)
 
-
-# Setup optimizer.
-optimizer = optim.Adam(model.parameters(), lr=args.lr)
-
-
-# Get some random test images for reconstruction testing.
-test_iter = iter(test_loader)
-reconstruction_samples, _ = test_iter.next()
-
-vutils.save_image(reconstruction_samples, args.org_path, normalize=True)
-writer.add_image('original', vutils.make_grid(reconstruction_samples, normalize=True))
-
-reconstruction_samples = Variable(reconstruction_samples, volatile=True)
-if args.gpu >= 0:
-	reconstruction_samples = reconstruction_samples.cuda(args.gpu)
-
-
-# Function to reconstruct the test images.
-def reconstruct_test_images():
-	model.eval()
-
-	output = model(reconstruction_samples)
-
-	reconstructed = model.reconstruct(output)
-	reconstructed = reconstructed.data.cpu()
-
-	return reconstructed
-
-
 # Function to convert batches of class indices to classes of one-hot vectors.
 def to_one_hot(x, length=10):
 	batch_size = x.size(0)
@@ -151,6 +122,35 @@ def to_one_hot(x, length=10):
 	for i in range(batch_size):
 		x_one_hot[i, x[i]] = 1.0
 	return x_one_hot
+
+# Setup optimizer.
+optimizer = optim.Adam(model.parameters(), lr=args.lr)
+
+
+# Get some random test images for reconstruction testing.
+test_iter = iter(test_loader)
+reconstruction_samples, target_test = test_iter.next()
+
+vutils.save_image(reconstruction_samples, args.org_path, normalize=True)
+writer.add_image('original', vutils.make_grid(reconstruction_samples, normalize=True))
+
+reconstruction_samples = Variable(reconstruction_samples, volatile=True)
+target_test_one_hot = Variable(to_one_hot(target_test))
+if args.gpu >= 0:
+	reconstruction_samples = reconstruction_samples.cuda(args.gpu)
+	target_test_one_hot = target_test_one_hot.cuda(args.gpu)
+
+# Function to reconstruct the test images.
+def reconstruct_test_images():
+	model.eval()
+
+	output = model(reconstruction_samples)
+
+	reconstructed = model.reconstruct(output, target_test_one_hot)
+	reconstructed = reconstructed.data.cpu()
+
+	return reconstructed
+
 
 
 # Function to get learning rates from the optimizer.

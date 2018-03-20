@@ -57,7 +57,7 @@ class CapsuleNetwork(nn.Module):
 		# target: [batch_size, 10]
 
 		margin_loss = self.margin_loss(input, target, size_average)
-		reconstruction_loss = self.reconstruction_loss(images, input, size_average)
+		reconstruction_loss = self.reconstruction_loss(images, input, target, size_average)
 
 		loss = margin_loss + reconstruction_loss
 
@@ -132,6 +132,7 @@ class CapsuleNetwork(nn.Module):
 	def reconstruct(self, input, target):
 		# input: [batch_size, 10, 16]
 		# target: [batch_size, 10]
+		batch_size = input.size(0)
 
 		# Mask with true label
 		mask0 = target.unsqueeze(2)
@@ -139,7 +140,7 @@ class CapsuleNetwork(nn.Module):
                 # mask: [batch_size, 10, 16]
 
 		# Stack masked capsules over the batch dimension.
-		masked = input * mask
+		masked = input * mask.squeeze(3)
 		# masked: [batch_size, 10, 16]
 		masked = masked.view(batch_size, -1)
 		# masked: [batch_size, 160]
