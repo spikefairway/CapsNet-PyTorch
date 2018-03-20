@@ -28,67 +28,72 @@ class DigitCaps(nn.Module):
 		self.W = nn.Parameter(
 			torch.randn(
 				self.in_capsules, 
-				self.out_capsules, 
-				self.out_capsule_size, 
-				self.in_capsule_size
+				self.in_capsule_size,
+				self.out_capsules * self.out_capsule_size 
 			)
 		)
-		# W: [in_capsules, out_capsules, out_capsule_size, in_capsule_size] = [1152, 10, 16, 8]
+		# W: [in_capsules, in_capsule_size, out_capsules * out_capsule_size] = [1152, 8, 10*16=160]
+
+		self.b_ij = nn.Parameter(
+			torch.zeros((
+				self.in_capsules,
+				self.out_capsules
+			))
+		)
+		# b_ij: [in_capsules, out_capsules] = [1152, 10]
+
 
 	# FIXME, write in an easier way to understand, some tensors have some redundant dimensions.
 	def forward(self, x):
 		# x: [batch_size, in_capsules=1152, in_capsule_size=8]
 		batch_size = x.size(0)
 
-		x = torch.stack([x] * self.out_capsules, dim=2)
-		# x: [batch_size, in_capsules=1152, out_capsules=10, in_capsule_size=8]
-
-		W = torch.cat([self.W.unsqueeze(0)] * batch_size, dim=0)
-		# W: [batch_size, in_capsules=1152, out_capsules=10, out_capsule_size=16, in_capsule_size=8]
+		x = x.unsqueeze(2)
+		# x: [batch_size, in_capsules=1152, 1, in_capsule_size=8]
 
 		# Transform inputs by weight matrix `W`.
-		u_hat = torch.matmul(W, x.unsqueeze(4)) # matrix multiplication
-		# u_hat: [batch_size, in_capsules=1152, out_capsules=10, out_capsule_size=16, 1]
+		u_hat = x.matmul(self.W)
+		u_hat = u_hat.view(u_hat.size(0), self.in_capsules, self.out_capsules, self.out_capsule_size)
+		# u_hat: [batch_size, in_capsules=1152, 10, 16]
 
 		u_hat_detached = u_hat.detach()
-		# u_hat_detached: [batch_size, in_capsules=1152, out_capsules=10, out_capsule_size=16, 1]
 		# In forward pass, `u_hat_detached` = `u_hat`, and 
-        # in backward, no gradient can flow from `u_hat_detached` back to `u_hat`.
+	# in backward, no gradient can flow from `u_hat_detached` back to `u_hat`.
 
-		# Initialize routing logits to zero.
-		b_ij = Variable(torch.zeros(batch_size, self.in_capsules, self.out_capsules, 1))
-		if self.gpu >= 0:
-			b_ij = b_ij.cuda(self.gpu)
-		# b_ij: [batch_size, in_capsules=1152, out_capsules=10, 1]
+		c_ij = F.softmax(self.b_ij, dim=1)
+		# c_ij: [1152, 10]
+
+		s_j = (c_ij.unsqueeze(2) * u_hat_detached).sum(dim=1)
+		# s_j: [batch_size, 10, 16]
+
+		v_j = squash(s_j, dim=2)
+		# v_j: [batch_size, 10, 16]
 
 		# Iterative routing.
-		for iteration in range(self.routing_iters):
-			# Convert routing logits to softmax.
-			c_ij = F.softmax(b_ij, dim=2).unsqueeze(4)
-			# c_ij: [batch_size, in_capsules=1152, out_capsules=10, 1, 1]
+		if self.routing_iters > 0:
+			b_batch = self.b_ij.expand((batch_size, self.in_capsules, self.out_capsules))
+			if self.gpu > 0:
+				b_batch = b_batch.cuda(self.gpu)
+			# b_batch: [batch_size, 1152, 10]
+			for iteration in range(self.routing_iters):
+				v_j = v_j.unsqueeze(1)
+				# v_j: [batch_size, 1, 10, 16]
+				
+				# Update b_ij
+				b_batch = b_batch + (u_hat_detached * v).sum(-1)
+				# (u_hat * v_j).sum(-1) : [batch_size, 1152, 10]
 
-			if iteration == self.routing_iters - 1:
-				# Apply routing `c_ij` to weighted inputs `u_hat`.
-				s_j = (c_ij * u_hat).sum(dim=1, keepdim=True) # element-wise product
-				# s_j: [batch_size, 1, out_capsules=10, out_capsule_size=16, 1]
-	
-				v_j = squash(s_j, dim=3)
-				# v_j: [batch_size, 1, out_capsules=10, out_capsule_size=16, 1]
+				c_ij = F.softmax(b_batch.view(-1, self.out_capsules), dim=1).view(-1, self.in_capsules, self.out_capsules, 1)
+				# c_ij: [batch_size, 1152, 10, 1]
 
-			else:
-				# Apply routing `c_ij` to weighted inputs `u_hat`.
-				s_j = (c_ij * u_hat_detached).sum(dim=1, keepdim=True) # element-wise product
-				# s_j: [batch_size, 1, out_capsules=10, out_capsule_size=16, 1]
+				if iteration == self.routing_iters - 1:
+					# Apply routing `c_ij` to weighted inputs `u_hat`.
+					s_j = (c_ij * u_hat).sum(dim=1) # element-wise product
+				else:
+					s_j = (c_ij * u_hat_detached).sum(dim=1)
+				# s_j: [batch_size, out_capsules=10, out_capsule_size=16]
 	
-				v_j = squash(s_j, dim=3)
-				# v_j: [batch_size, 1, out_capsules=10, out_capsule_size=16, 1]
-	
-				# Compute inner products of 2 16D-vectors, `u_hat` and `v_j`.
-				u_vj1 = torch.matmul(u_hat_detached.transpose(3, 4), v_j).squeeze(4)
-				# u_vj1: [batch_size, in_capsules=1152, out_capsules=10, 1]
-				# Not calculate batch mean.
-	
-				# Update b_ij (routing).
-				b_ij = b_ij + u_vj1
+				v_j = squash(s_j, dim=2)
+				# v_j: [batch_size, out_capsules=10, out_capsule_size=16]
 
-		return v_j.squeeze(4).squeeze(1) # [batch_size, out_capsules=10, out_capsule_size=16]
+		return v_j # [batch_size, out_capsules=10, out_capsule_size=16]
