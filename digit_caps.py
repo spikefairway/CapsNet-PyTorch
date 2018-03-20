@@ -56,16 +56,15 @@ class DigitCaps(nn.Module):
         # in backward, no gradient can flow from `u_hat_detached` back to `u_hat`.
 
 		# Initialize routing logits to zero.
-		b_ij = Variable(torch.zeros(self.in_capsules, self.out_capsules, 1))
+		b_ij = Variable(torch.zeros(batch_size, self.in_capsules, self.out_capsules, 1))
 		if self.gpu >= 0:
 			b_ij = b_ij.cuda(self.gpu)
-		# b_ij: [in_capsules=1152, out_capsules=10, 1]
+		# b_ij: [batch_size, in_capsules=1152, out_capsules=10, 1]
 
 		# Iterative routing.
 		for iteration in range(self.routing_iters):
 			# Convert routing logits to softmax.
-			c_ij = F.softmax(b_ij.unsqueeze(0), dim=2)
-			c_ij = torch.cat([c_ij] * batch_size, dim=0).unsqueeze(4)
+			c_ij = F.softmax(b_ij, dim=2).unsqueeze(4)
 			# c_ij: [batch_size, in_capsules=1152, out_capsules=10, 1, 1]
 
 			if iteration == self.routing_iters - 1:
@@ -85,8 +84,9 @@ class DigitCaps(nn.Module):
 				# v_j: [batch_size, 1, out_capsules=10, out_capsule_size=16, 1]
 	
 				# Compute inner products of 2 16D-vectors, `u_hat` and `v_j`.
-				u_vj1 = torch.matmul(u_hat_detached.transpose(3, 4), v_j).squeeze(4).mean(dim=0, keepdim=False)
-				# u_vj1: [in_capsules=1152, out_capsules=10, 1]
+				u_vj1 = torch.matmul(u_hat_detached.transpose(3, 4), v_j).squeeze(4)
+				# u_vj1: [batch_size, in_capsules=1152, out_capsules=10, 1]
+				# Not calculate batch mean.
 	
 				# Update b_ij (routing).
 				b_ij = b_ij + u_vj1
