@@ -11,35 +11,38 @@ from torchvision import datasets, transforms
 import torchvision.utils as vutils
 import torch.nn.functional as F
 
-from conv_layer import Conv1
 from caps_layers import PrimaryCaps, DigitCaps
 from decoder import Decoder
 
 
 class CapsuleNetwork(nn.Module):
-    def __init__(self, routing_iters, gpu):
+    def __init__(self, routing_iters, is_relu=False):
         super(CapsuleNetwork, self).__init__()
-
-        self.gpu = gpu
 
         # Build modules for CapsNet.
 
         ## Convolution layer
-        self.conv1 = Conv1()
+        self.conv1 = nn.Conv2d(
+                in_channels=1,
+                out_channels=256,
+                kernel_size=9,
+                stride=1,
+                bias=True
+        )
 
         ## PrimaryCaps layer
-        self.primary_caps = PrimaryCaps()
+        self.primary_caps = PrimaryCaps(256, 32, 8, is_relu=is_relu)
 
         ## DigitCaps layer
-        self.digit_caps = DigitCaps(routing_iters=routing_iters, gpu=gpu)
+        self.digit_caps = DigitCaps(32, 8, 10, 16, routing_iters=routing_iters)
 
         ## Decoder
         self.decoder = Decoder()
 
     def forward(self, x):
-        # x: [bacch_size, 1, 28, 28]
+        # x: [batch_size, 1, 28, 28]
 
-        h = self.conv1(x)
+        h = F.relu(self.conv1(x))
         # h: [batch_size, 256, 20, 20]
 
         h = self.primary_caps(h)
@@ -75,8 +78,8 @@ class CapsuleNetwork(nn.Module):
 
         # Calculate left and right max() terms from Eq.4 in the paper.
         zero = Variable(torch.zeros(1))
-        if self.gpu >= 0:
-            zero = zero.cuda(self.gpu)
+        if torch.cuda.is_available():
+            zero = zero.cuda()
         m_plus = 0.9
         m_minus = 0.1
         max_l = torch.max(m_plus - v_mag, zero).view(batch_size, -1)**2
