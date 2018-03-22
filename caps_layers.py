@@ -10,7 +10,12 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 
-from squash import squash
+def squash(x, dim=2):
+    v_length_sq = x.pow(2).sum(dim=dim)
+    v_length = torch.sqrt(v_length_sq)
+    scaling_factor = v_length_sq / (1 + v_length_sq) / v_length
+
+    return x * scaling_factor
 
 class PrimaryCaps(nn.Module):
     """
