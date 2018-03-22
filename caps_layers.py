@@ -63,42 +63,41 @@ class PrimaryCaps(nn.Module):
         return out
 
 class DigitCaps(nn.Module):
-    def __init__(self, routing_iters, gpu):
+    def __init__(self, in_capsules, in_capsule_dim, out_capsules, out_capsule_dim,
+                 routing_iters=3):
         super(DigitCaps, self).__init__()
 
         self.routing_iters = routing_iters
-        self.gpu = gpu
 
-        self.in_capsules = 1152
-        self.in_out_capsule_dim = 8
-        self.out_capsules = 10
-        self.out_capsule_dim = 16
+        self.in_capsules = in_capsules
+        self.in_capsule_dim = in_capsule_dim
+        self.out_capsules = out_capsules
+        self.out_capsule_dim = out_capsule_dim
 
         self.W = nn.Parameter(
             torch.Tensor(
                 self.in_capsules, 
                 self.out_capsules, 
                 self.out_capsule_dim, 
-                self.in_out_capsule_dim
+                self.in_capsule_dim
             )
         )
-        # W: [in_capsules, out_capsules, out_capsule_dim, in_out_capsule_dim] = [1152, 10, 16, 8]
+        # W: [in_capsules, out_capsules, out_capsule_dim, in_capsule_dim] = [1152, 10, 16, 8]
         self.reset_parameters()
 
     def reset_parameters(self):
         stdv = 1. / math.sqrt(self.in_capsules)
         self.W.data.uniform_(-stdv, stdv)
 
-    # FIXME, write in an easier way to understand, some tensors have some redundant dimensions.
     def forward(self, x):
-        # x: [batch_size, in_capsules=1152, in_out_capsule_dim=8]
+        # x: [batch_size, in_capsules=1152, in_capsule_dim=8]
         batch_size = x.size(0)
 
         x = torch.stack([x] * self.out_capsules, dim=2)
-        # x: [batch_size, in_capsules=1152, out_capsules=10, in_out_capsule_dim=8]
+        # x: [batch_size, in_capsules=1152, out_capsules=10, in_capsule_dim=8]
 
         W = torch.cat([self.W.unsqueeze(0)] * batch_size, dim=0)
-        # W: [batch_size, in_capsules=1152, out_capsules=10, out_capsule_dim=16, in_out_capsule_dim=8]
+        # W: [batch_size, in_capsules=1152, out_capsules=10, out_capsule_dim=16, in_capsule_dim=8]
 
         # Transform inputs by weight matrix `W`.
         u_hat = torch.matmul(W, x.unsqueeze(4)) # matrix multiplication
@@ -111,8 +110,8 @@ class DigitCaps(nn.Module):
 
         # Initialize routing logits to zero.
         b_ij = Variable(torch.zeros(batch_size, self.in_capsules, self.out_capsules, 1))
-        if self.gpu >= 0:
-            b_ij = b_ij.cuda(self.gpu)
+        if torch.cuda.is_available()
+            b_ij = b_ij.cuda()
         # b_ij: [batch_size, in_capsules=1152, out_capsules=10, 1]
 
         # Iterative routing.
