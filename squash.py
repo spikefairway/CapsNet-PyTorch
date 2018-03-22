@@ -12,9 +12,9 @@ import torch.nn.functional as F
 
 
 def squash(s, dim):
-	# This is Eq.1 from the paper.
-	mag_sq = torch.sum(s**2, dim=dim, keepdim=True)
-	mag = torch.sqrt(mag_sq)
-	s = (mag_sq / (1.0 + mag_sq)) * (s / mag)
+    # This is Eq.1 from the paper.
+    mag_sq = torch.sum(s**2, dim=dim, keepdim=True)
+    mag = torch.sqrt(mag_sq)
+    s = (mag_sq / (1.0 + mag_sq)) * (s / mag)
 
-	return s
+    return s
