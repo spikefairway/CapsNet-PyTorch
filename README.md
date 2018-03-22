@@ -6,9 +6,15 @@ A PyTorch implementation of CapsNet based on Geoffrey Hinton's paper [Dynamic Ro
 
 This figure is from [CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow).
 
-## Current Status
-- The current `test accuracy =  99.51 % (test error = 0.49)`, see `Results` section for details
-- Trying to find the reason why the test accuracy is lower than the one reported in the paper
+This implementation is forked and revised version from [motokimura's implementation](https://github.com/motokimura/CapsNet-PyTorch).
+Revised points are the followings:
+
+- Fix softmax dimension in routing.
+- Initialize W in DigitCaps with uniform distribution.
+- Use Conv2D(in\_channels, out\_capsules * out\_capsule\_dim) as capsule layers in PrimaryCaps, for efficient computation.
+- Set initial learning rate to 0.001.
+- Mask with true label in reconstruction.
+- Update b\_ij with agreement for each sample.
 
 ## Requirements
 
@@ -44,8 +50,8 @@ $ tensorboard --logdir ./runs
 
 Some training hyper parameters can be specified from the command line options of `main.py`. 
 
-In default, batch size is 128 both for training and validation, and epoch is set to 50. 
-Learning rate of Adam optimizer is set to 0.01 and is exponentially decayed every epoch with the factor of 0.9. 
+In default, batch size is 128 both for training and validation, and epoch is set to 10. 
+Learning rate of Adam optimizer is set to 0.001 and is exponentially decayed every epoch with the factor of 0.9. 
 
 For more details, type `python main.py --help`.
 
