@@ -110,7 +110,7 @@ class DigitCaps(nn.Module):
 
         # Initialize routing logits to zero.
         b_ij = Variable(torch.zeros(batch_size, self.in_capsules, self.out_capsules, 1))
-        if torch.cuda.is_available()
+        if torch.cuda.is_available():
             b_ij = b_ij.cuda()
         # b_ij: [batch_size, in_capsules=1152, out_capsules=10, 1]
 
