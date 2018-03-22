@@ -28,6 +28,7 @@ class PrimaryCaps(nn.Module):
         self.in_channels = in_channels
         self.out_capsules = out_capsules
         self.out_capsule_dim = out_capsule_dim
+        self.is_relu = is_relu
 
         self.capsules = nn.Conv2d(
                 in_channels=in_channels,
@@ -38,22 +39,28 @@ class PrimaryCaps(nn.Module):
         )
 
     def forward(self, x):
-        # x: [batch_size, 256, 20, 20]
+        """
+        Revise based on adambielski's implementation.
+        ref: https://github.com/adambielski/CapsNet-pytorch/blob/master/net.py
+        """
+        # x: [batch_size, in_channels=256, 20, 20]
         batch_size = x.size(0)
 
-        u = self.capsules(x)
-        # u: [batch_size, 8*32, 6, 6]
+        out = self.capsules(x)
+        if self.is_relu:    # ReLU activation
+            out = F.relu(out)
+        # out: [batch_size, out_capsules=32 * out_capsule_dim=8 = 256, 6, 6]
 
-        u = u.view(batch_size, self.out_capsule_dim, -1)
-        # u: [batch_size, out_capsule_dim=8, 1152=6*6*32]
+        _, C, H, W = out.size()
+        out = out.view(batch_size, self.output_caps, self.output_dim, H, W)
+        out = out.permute(0, 1, 3, 4, 2).contiguous()
+        out = out.view(out.size(0), -1, out.size(4))
+        # u: [batch_size, 32 * 6 * 6=1152, 8]
 
-        u = u.transpose(1, 2)
-        # u: [batch_size, 1152, out_capsule_dim=8]
+        # Squash vectors
+        out = squash(out)
 
-        u_squashed = squash(u, dim=2)
-        # u_squashed: [batch_size, 1152, out_capsule_dim=8]
-
-        return u_squashed
+        return out
 
 class DigitCaps(nn.Module):
     def __init__(self, routing_iters, gpu):
