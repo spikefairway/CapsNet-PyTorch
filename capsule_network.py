@@ -12,8 +12,7 @@ import torchvision.utils as vutils
 import torch.nn.functional as F
 
 from conv_layer import Conv1
-from primary_caps import PrimaryCaps
-from digit_caps import DigitCaps
+from caps_layers import PrimaryCaps, DigitCaps
 from decoder import Decoder
 
 
