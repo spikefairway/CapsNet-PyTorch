@@ -59,28 +59,9 @@ For more details, type `python main.py --help`.
 
 Some results at default training settings are shown here.
 
-### Train loss
+### Train & test loss
 
 ![](images/train_loss.png)
-
-### Test loss
-
-![](images/test_loss.png)
-
-### Test accuracy
-
-![](images/test_accuracy.png)
-
-Method     |   Routing   |   Reconstruction  |  Test error  |  *Paper*    
-:---------|:------:|:---:|:----:|:----:
-CapsNet-v1 |  1 | no | not tested yet  | *0.34 (0.032)* 
-CapsNet-v2  |  1 | yes | not tested yet | *0.29 (0.011)*
-CapsNet-v3 |  3 | no | not tested yet | *0.35 (0.036)*
-CapsNet-v4  |  3 | yes| 0.49 | *0.25*
-
-### Reconstruction results
-
-![](images/reconstruction_results.png)
 
 ## License
 
@@ -88,6 +69,8 @@ CapsNet-v4  |  3 | yes| 0.49 | *0.25*
 
 ## References
 
-- [naturomics/CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow)
-- [XifengGuo/CapsNet-Keras](https://github.com/XifengGuo/CapsNet-Keras)
+- [motokimura/CapsNet-PyTorch](https://github.com/motokimura/CapsNet-PyTorch)
 - [timomernick/pytorch-capsule](https://github.com/timomernick/pytorch-capsule)
+- [naturomics/CapsNet-Tensorflow](https://github.com/naturomics/CapsNet-Tensorflow)
+- [adambielski/CapsNet-pytorch](https://github.com/adambielski/CapsNet-pytorch)
+- [XifengGuo/CapsNet-Keras](https://github.com/XifengGuo/CapsNet-Keras)
