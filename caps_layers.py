@@ -24,13 +24,12 @@ class PrimaryCaps(nn.Module):
     PrimaryCaps layers.
     """
     def __init__(self, in_channels, out_capsules, out_capsule_dim,
-                 kernel_size=9, stride=2, is_relu=False):
+                 kernel_size=9, stride=2):
         super(PrimaryCaps, self).__init__()
 
         self.in_channels = in_channels
         self.out_capsules = out_capsules
         self.out_capsule_dim = out_capsule_dim
-        self.is_relu = is_relu
 
         self.capsules = nn.Conv2d(
                 in_channels=in_channels,
@@ -49,8 +48,6 @@ class PrimaryCaps(nn.Module):
         batch_size = x.size(0)
 
         out = self.capsules(x)
-        if self.is_relu:    # ReLU activation
-            out = F.relu(out)
         # out: [batch_size, out_capsules=32 * out_capsule_dim=8 = 256, 6, 6]
 
         _, C, H, W = out.size()
