@@ -34,7 +34,7 @@ class CapsuleNetwork(nn.Module):
         self.primary_caps = PrimaryCaps(256, 32, 8, is_relu=is_relu)
 
         ## DigitCaps layer
-        self.digit_caps = DigitCaps(32, 8, 10, 16, routing_iters=routing_iters)
+        self.digit_caps = DigitCaps(1152, 8, 10, 16, routing_iters=routing_iters)
 
         ## Decoder
         self.decoder = Decoder()

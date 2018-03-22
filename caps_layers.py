@@ -13,7 +13,7 @@ import torch.nn.functional as F
 import math
 
 def squash(x, dim=2):
-    v_length_sq = x.pow(2).sum(dim=dim)
+    v_length_sq = x.pow(2).sum(dim=dim, keepdim=True)
     v_length = torch.sqrt(v_length_sq)
     scaling_factor = v_length_sq / (1 + v_length_sq) / v_length
 
@@ -60,7 +60,7 @@ class PrimaryCaps(nn.Module):
         # u: [batch_size, 32 * 6 * 6=1152, 8]
 
         # Squash vectors
-        out = squash(out)
+        out = squash(out, dim=2)
 
         return out
 
