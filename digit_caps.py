@@ -10,6 +10,8 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 
+import math
+
 from squash import squash
 
 
@@ -26,7 +28,7 @@ class DigitCaps(nn.Module):
 		self.out_capsule_size = 16
 
 		self.W = nn.Parameter(
-			torch.randn(
+			torch.Tensor(
 				self.in_capsules, 
 				self.out_capsules, 
 				self.out_capsule_size, 
@@ -34,6 +36,13 @@ class DigitCaps(nn.Module):
 			)
 		)
 		# W: [in_capsules, out_capsules, out_capsule_size, in_capsule_size] = [1152, 10, 16, 8]
+		self.reset_parameters()
+
+	def reset_parameters(self):
+		""" Reset W.
+		"""
+		stdv = 1. / math.sqrt(self.in_capsules)
+		self.W.data.uniform_(-stdv, stdv)
 
 	# FIXME, write in an easier way to understand, some tensors have some redundant dimensions.
 	def forward(self, x):
@@ -53,7 +62,7 @@ class DigitCaps(nn.Module):
 		u_hat_detached = u_hat.detach()
 		# u_hat_detached: [batch_size, in_capsules=1152, out_capsules=10, out_capsule_size=16, 1]
 		# In forward pass, `u_hat_detached` = `u_hat`, and 
-        # in backward, no gradient can flow from `u_hat_detached` back to `u_hat`.
+	# in backward, no gradient can flow from `u_hat_detached` back to `u_hat`.
 
 		# Initialize routing logits to zero.
 		b_ij = Variable(torch.zeros(self.in_capsules, self.out_capsules, 1))
