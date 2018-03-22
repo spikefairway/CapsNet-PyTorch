@@ -10,6 +10,8 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 
+import math
+
 def squash(x, dim=2):
     v_length_sq = x.pow(2).sum(dim=dim)
     v_length = torch.sqrt(v_length_sq)
