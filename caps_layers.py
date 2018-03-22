@@ -54,7 +54,7 @@ class PrimaryCaps(nn.Module):
         # out: [batch_size, out_capsules=32 * out_capsule_dim=8 = 256, 6, 6]
 
         _, C, H, W = out.size()
-        out = out.view(batch_size, self.output_caps, self.output_dim, H, W)
+        out = out.view(batch_size, self.out_capsules, self.out_capsule_dim, H, W)
         out = out.permute(0, 1, 3, 4, 2).contiguous()
         out = out.view(out.size(0), -1, out.size(4))
         # u: [batch_size, 32 * 6 * 6=1152, 8]
