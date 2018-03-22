@@ -16,7 +16,7 @@ from decoder import Decoder
 
 
 class CapsuleNetwork(nn.Module):
-    def __init__(self, routing_iters, is_relu=False):
+    def __init__(self, routing_iters):
         super(CapsuleNetwork, self).__init__()
 
         # Build modules for CapsNet.
@@ -31,7 +31,7 @@ class CapsuleNetwork(nn.Module):
         )
 
         ## PrimaryCaps layer
-        self.primary_caps = PrimaryCaps(256, 32, 8, is_relu=is_relu)
+        self.primary_caps = PrimaryCaps(256, 32, 8)
 
         ## DigitCaps layer
         self.digit_caps = DigitCaps(1152, 8, 10, 16, routing_iters=routing_iters)
